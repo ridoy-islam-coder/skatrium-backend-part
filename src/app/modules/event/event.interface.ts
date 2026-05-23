@@ -56,10 +56,7 @@
 
 import { Types } from "mongoose";
 
-export interface IReviewImage {
-  id: string;
-  url: string;
-}
+
 
 // ✅ নতুন — Reply interface
 export interface IReply {
@@ -81,6 +78,14 @@ export interface IReview {
   replies?: IReply[]; // ✅ নতুন
   createdAt?: Date;
   updatedAt?: Date;
+}
+
+
+export interface IPromotion {
+  title: string;
+  description: string;
+  discount_percentage?: number;
+  valid_until?: Date;
 }
 
 export interface ILocation {

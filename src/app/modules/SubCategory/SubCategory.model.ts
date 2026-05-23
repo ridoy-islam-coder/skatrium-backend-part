@@ -53,18 +53,11 @@ const subCategorySchema = new Schema<ISubCategoryDocument, ISubCategoryModel>(
       default: '',
     },
  
-    image_url: {
-      type: String,
-      default: '',
-    },
     is_active: {
       type: Boolean,
       default: true,
     },
-    sort_order: {
-      type: Number,
-      default: 0,
-    },
+
   },
   {
     timestamps: true,
