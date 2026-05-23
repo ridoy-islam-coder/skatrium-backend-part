@@ -212,5 +212,5 @@ export const businessServices={
   updateBusinessService,
   deleteBusinessService,
   getMyBusinessesService,
-    getBusinessDetailsService,
+getBusinessDetailsService,
 }

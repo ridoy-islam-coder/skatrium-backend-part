@@ -1,6 +1,7 @@
 // event.model.ts
 import { model, Schema,  } from "mongoose";
 import { IEvent, IPromotion,  } from "./event.interface";
+import { string } from "zod";
 
 
 
@@ -20,8 +21,8 @@ const promotionSchema = new Schema<IPromotion>({
 
 const eventSchema = new Schema<IEvent>(
   {
-    eventtitle: {  type: Schema.Types.ObjectId,ref: 'Business',required: true,},
-    eventsubtitle: {  type: Schema.Types.ObjectId,ref: 'Business',required: true,},
+    eventtitle: {  type: String,ref: 'Business',required: true,},
+    eventsubtitle: { type:String ,required: true },
 
       businessID: {
       type: Schema.Types.ObjectId,
@@ -43,7 +44,9 @@ const eventSchema = new Schema<IEvent>(
       {
         id: { type: String },
         url: { type: String },
+     
       },
+    
     ],
     host: {
       type: Schema.Types.ObjectId,
