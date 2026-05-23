@@ -1,71 +1,73 @@
-import mongoose, { Document, Model } from 'mongoose';
+import { Document, Types } from 'mongoose';
 
 // ═══════════════════════════════════════════════════════════════════
 //  Enums
 // ═══════════════════════════════════════════════════════════════════
 export enum BusinessType {
-  ONLINE  = 'Online',
-  OFFLINE = 'Offline',
-  BOTH    = 'Both',
+  ONLINE  = 'ONLINE',
+  OFFLINE = 'OFFLINE',
+  HYBRID  = 'HYBRID',
 }
 
 export enum SpotlightNature {
-  SPOTLIGHT_NATURE = 'Spotlight Nature',
-  FEATURED         = 'Featured',
-  PROMOTED         = 'Promoted',
-}
-export interface ILocation {
-  type: "Point";
-  coordinates: [longitude: number, latitude: number];
-}
-// ═══════════════════════════════════════════════════════════════════
-//  Review Image Interface
-// ═══════════════════════════════════════════════════════════════════
-export interface IReviewImage {
-  id:  string;
-  url: string;
+  SPOTLIGHT_NATURE = 'SPOTLIGHT_NATURE',
+  // add more values if needed
 }
 
 // ═══════════════════════════════════════════════════════════════════
-//  Review Interface  (reviewSchema এর সাথে same)
+//  Sub Interfaces
 // ═══════════════════════════════════════════════════════════════════
+export interface IReviewImage {
+  id?:  string;
+  url?: string;
+}
+
+export interface IReply {
+  user:      Types.ObjectId;
+  comment:   string;
+  isRead?:   boolean;
+  createdAt?: Date;
+  updatedAt?: Date;
+}
+
 export interface IReview {
-  user:        mongoose.Types.ObjectId;
-  rating:      number;               // min: 1, max: 5
+  user:        Types.ObjectId;
+  rating:      number;           // 1–5
   comment:     string;
-  images:      IReviewImage[];
-  isAnonymous: boolean;
+  images?:     IReviewImage[];
+  isAnonymous?: boolean;
   createdAt?:  Date;
   updatedAt?:  Date;
 }
 
+export interface IGeoLocation {
+  type:        'Point';
+  coordinates: number[];         // [longitude, latitude]
+}
+
 // ═══════════════════════════════════════════════════════════════════
-//  Main Business Interface  (businessSchema এর সাথে same)
+//  Main Business Document Interface
 // ═══════════════════════════════════════════════════════════════════
-export interface IBusiness {
-  host:                  mongoose.Types.ObjectId;
+export interface IBusinessDocument extends Document {
+  host:                  Types.ObjectId;       // ref: 'User'
   business_name:         string;
-  business_type:         BusinessType;
-  business_category:     mongoose.Types.ObjectId;
-  business_sub_category: mongoose.Types.ObjectId;
-  location:              ILocation;
-  get_velocity_option:   SpotlightNature;
-  featured_image:        string;        // 1:5 ratio image/video
-  business_image:        string;
-  business_description:  string;
-  gallery:               string[];      // multiple images
-  reviews:               IReview[];
-}
+  business_type?:        BusinessType;
+  business_category:     Types.ObjectId;       // ref: 'Category'
+  business_sub_category: Types.ObjectId;       // ref: 'SubCategory'
+  location?:             IGeoLocation;
+  get_velocity_option?:  SpotlightNature;
 
-// ═══════════════════════════════════════════════════════════════════
-//  Document Interface  (Mongoose _id, createdAt, updatedAt সহ)
-// ═══════════════════════════════════════════════════════════════════
-export interface IBusinessDocument extends IBusiness, Document {
-  createdAt: Date;
-  updatedAt: Date;
-}
+  // Images
+  featured_image?:       string;
+  featured_image_key?:   string;               // S3 key for deletion
+  business_description?: string;
+  gallery?:              string[];
+  gallery_keys?:         string[];             // S3 keys for deletion
 
-// ═══════════════════════════════════════════════════════════════════
-//  Model Interface
-// ═══════════════════════════════════════════════════════════════════
-export interface IBusinessModel extends Model<IBusinessDocument> {}
+  // Reviews
+  reviews?: IReview[];
+
+  // Timestamps
+  createdAt?: Date;
+  updatedAt?: Date;
+}

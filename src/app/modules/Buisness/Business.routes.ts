@@ -1,6 +1,8 @@
 import express from 'express';
 import { businessController } from './Business.controller';
 import upload from '../../middleware/fileUpload';
+import { USER_ROLE } from '../user/user.constant';
+import auth from '../../middleware/auth.middleware';
 
 const router = express.Router();
 
@@ -12,14 +14,15 @@ const businessFileFields = upload.fields([
 
 
 
-// router.get('/my-business',  businessController.getMyBusiness);
+router.get('/my-business',auth(USER_ROLE.USER),  businessController.getMyBusinesses);
+router.get('/business-details/:id', auth(USER_ROLE.USER), businessController.getBusinessDetails);
 
-router.post('/create-business',businessFileFields,businessController.createBusiness);
+router.post('/create-business', auth(USER_ROLE.USER), businessFileFields, businessController.createBusiness);
 
-// router.patch('/update-business/:id',businessFileFields, businessController.updateBusiness);
+router.patch('/update-business/:id',auth(USER_ROLE.USER), businessFileFields, businessController.updateBusiness);
 
-// router.delete('/delete-business/:id', businessController.deleteBusiness);
+router.delete('/delete-business/:id', auth(USER_ROLE.USER), businessController.deleteBusiness);
 
 
 
-export default router;
+export const businessRoutes = router;

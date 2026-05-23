@@ -23,6 +23,8 @@ import { FollowRoutes } from '../modules/Follow/follow.routes';
 import { NotificationRoutes } from '../modules/Dashboard/notifications/notifications.routes';
 import { SettingsRoutes } from '../modules/Settings/Settings.routes';
 import { ContactRoutes } from '../modules/Contact/contact.routes';
+import { businessRoutes } from '../modules/Buisness/Business.routes';
+import { subCategoryRoutes } from '../modules/SubCategory/SubCategory.routes';
 // import { PromoCodeRoutes } from '../modules/PromoCode/promocode.routes';
 
 
@@ -130,7 +132,15 @@ const moduleRoutes = [
    {
    path: '/contact',
     route: ContactRoutes,
-  } 
+  } ,
+  {
+    path: '/business',
+    route: businessRoutes,
+  },
+  {
+    path: '/subCategory',
+    route: subCategoryRoutes,
+  }
   
   
 
