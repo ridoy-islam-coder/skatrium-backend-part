@@ -4,7 +4,7 @@ import config from './app/config';
 import { startupLogger } from './app/utils/startupLogger';
 
 
-const port = Number(config.port) || 5001;
+const port = Number(config.port) || 5000;
 
 const startServer = async () => {
   try {

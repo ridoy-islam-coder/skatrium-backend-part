@@ -104,8 +104,7 @@ const businessSchema = new Schema<IBusinessDocument, IBusinessModel>(
       enum: Object.values(SpotlightNature),
       default: SpotlightNature.SPOTLIGHT_NATURE,
     },
-    featured_image:      { type: String, default: '' }, // 1:5 ratio image/video
-    business_image:      { type: String, default: '' },
+    featured_image:      { type: String, default: '' },
     business_description:{ type: String, default: '' },
     gallery:             [{ type: String }],            // multiple images
   
