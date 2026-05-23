@@ -3,8 +3,6 @@ import { Model } from 'mongoose';
 export enum UserRole {
   USER = 'USER',
   admin = 'admin',
-  MARCHANT = 'MARCHANT',
-  KAATEDJ = 'KAATEDJ',
   ORGANIZER = 'ORGANIZER',
 }
 export enum status {

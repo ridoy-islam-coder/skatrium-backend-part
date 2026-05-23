@@ -14,15 +14,15 @@ const router = Router();
 
 
 
-router.get("/getby-roll", auth(UserRole.USER,UserRole.ORGANIZER, UserRole.MARCHANT, UserRole.KAATEDJ,UserRole.admin), userControllers.getUsersByRole);
+router.get("/getby-roll", auth(UserRole.USER,UserRole.ORGANIZER, UserRole.admin), userControllers.getUsersByRole);
 
 
-router.get("/organizer-profile/:userId",auth(UserRole.USER, UserRole.ORGANIZER, UserRole.MARCHANT, UserRole.KAATEDJ,UserRole.KAATEDJ,UserRole.admin),userControllers.getOrganizerProfile);
+router.get("/organizer-profile/:userId",auth(UserRole.USER, UserRole.ORGANIZER, UserRole.admin),userControllers.getOrganizerProfile);
 
 
 
 // GET /api/v1/users/:userId/marchant-profile
-router.get("/marchant-profile/:userId",auth(UserRole.USER, UserRole.ORGANIZER, UserRole.MARCHANT, UserRole.KAATEDJ,UserRole.KAATEDJ,UserRole.admin ),userControllers.getMarchantProfile);
+router.get("/marchant-profile/:userId",auth(UserRole.USER, UserRole.ORGANIZER,UserRole.admin ),userControllers.getMarchantProfile);
 
 
 // GET /api/v1/subscribe-email
@@ -109,7 +109,7 @@ router.get(
 
 router.delete(
   '/delete-account',
-  auth(USER_ROLE.USER, USER_ROLE.MARCHANT),
+  auth(USER_ROLE.USER, USER_ROLE.ORGANIZER),
   validateRequest(authValidation.deleteAccountZodSchema),
   userControllers.deleteAccount,
 );
