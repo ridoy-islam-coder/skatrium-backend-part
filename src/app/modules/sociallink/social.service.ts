@@ -318,8 +318,18 @@ export const register = async (payload: any) => {
     website,
     shoplink,
     file, // 👈 image
+
+
+
+    // new data
+    businesssub_category,
+    Buisness_Category,
+    Buisness_owner_Type,
+    Buisness_Type,
   } = payload;
 
+
+   
   // ✅ Validations
   if (!termsAccepted) {
     throw new AppError(httpStatus.BAD_REQUEST, 'Accept terms first');
@@ -393,7 +403,7 @@ export const register = async (payload: any) => {
   // ✅ Create Social Links (if any data exists)
   const hasSocialData =
     shopName || shoptype || facebook || instagram ||
-    linkedin || twitter || youtube || tiktok || website || shoplink;
+    linkedin || twitter || youtube || tiktok || website || shoplink || businesssub_category || Buisness_Category || Buisness_owner_Type || Buisness_Type;
 
   if (hasSocialData) {
     await SocialLink.create({
@@ -408,6 +418,10 @@ export const register = async (payload: any) => {
       tiktok: tiktok || '',
       website: website || '',
       shoplink: shoplink || '',
+      businesssub_category: businesssub_category || null,
+      Buisness_Category: Buisness_Category || null,
+      Buisness_owner_Type: Buisness_owner_Type || '',
+      Buisness_Type: Buisness_Type || '',
     });
   }
 

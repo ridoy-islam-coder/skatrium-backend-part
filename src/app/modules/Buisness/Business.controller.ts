@@ -77,6 +77,17 @@ export const getActiveEventByBusiness = catchAsync(async (req, res) => {
 });
 
 
+// ✅ Get Home Page Data
+export const getHomePage = catchAsync(async (req, res) => {
+  const result = await businessServices.getHomePageService(req);
+  sendResponse(res, {
+    statusCode: 200,
+    success:    true,
+    message:    'Home page data fetched successfully',
+    data:       result,
+  });
+});
+ 
 
 
 export const businessController = {
@@ -85,5 +96,6 @@ export const businessController = {
   deleteBusiness,
   getMyBusinesses,
   getBusinessDetails,
-  getActiveEventByBusiness
+  getActiveEventByBusiness,
+  getHomePage
 }

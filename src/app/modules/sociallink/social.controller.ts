@@ -88,6 +88,10 @@ export const register = catchAsync(async (req: Request, res: Response) => {
     tiktok: req.body.tiktok,
     website: req.body.website,
     shoplink: req.body.shoplink,
+    businesssub_category: req.body.businesssub_category,
+    Buisness_Category: req.body.Buisness_Category,
+    Buisness_owner_Type: req.body.Buisness_owner_Type,
+    Buisness_Type: req.body.Buisness_Type,
   });
 
   //  Response

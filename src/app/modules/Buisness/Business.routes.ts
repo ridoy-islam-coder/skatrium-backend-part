@@ -15,6 +15,7 @@ const businessFileFields = upload.fields([
 
 
 router.get('/my-business',auth(USER_ROLE.USER),  businessController.getMyBusinesses);
+
 router.get('/business-details/:id', auth(USER_ROLE.USER), businessController.getBusinessDetails);
 
 router.post('/create-business', auth(USER_ROLE.USER), businessFileFields, businessController.createBusiness);
@@ -24,5 +25,7 @@ router.patch('/update-business/:id',auth(USER_ROLE.USER), businessFileFields, bu
 router.delete('/delete-business/:id', auth(USER_ROLE.USER), businessController.deleteBusiness);
 
 router.post('/active',auth(USER_ROLE.USER), businessController.getActiveEventByBusiness); // body: { businessID }
+
+router.get('/home',auth(USER_ROLE.ORGANIZER), businessController.getHomePage); // Home page data for all users
 
 export const businessRoutes = router;

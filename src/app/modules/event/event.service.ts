@@ -182,8 +182,6 @@ export const createEventService = async (req: Request): Promise<IEventDocument> 
       businessID,
       eventtitle,
       eventsubtitle,
-      date,
-      time,
       description,
       host: userId,
       coverImage,

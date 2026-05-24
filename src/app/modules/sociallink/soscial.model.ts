@@ -17,6 +17,10 @@ export interface TSocialLink {
   website?: string;
   createdAt?: Date;
   updatedAt?: Date;
+  businesssub_category?: Types.ObjectId;
+  Buisness_Category: Types.ObjectId;
+  Buisness_owner_Type: string;
+  Buisness_Type: string;
 }
 // ─── Schema ───────────────────────────────────────────────────────────────────
 const SocialLinkSchema = new Schema<TSocialLink>(
@@ -68,8 +72,23 @@ const SocialLinkSchema = new Schema<TSocialLink>(
       type: String,
       default: '',
     },
-    
-  
+    businesssub_category: {
+       type: Schema.Types.ObjectId,
+      ref: 'User',
+    },
+    Buisness_Category: {
+      type: Schema.Types.ObjectId,
+      ref: 'User',
+    },
+
+    Buisness_owner_Type: {
+      type: String,
+      default: '',
+    },
+    Buisness_Type: {
+      type: String,
+      default: '',
+    }
   },
   {
     timestamps: true,

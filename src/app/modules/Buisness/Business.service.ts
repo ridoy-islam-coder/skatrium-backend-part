@@ -6,6 +6,9 @@ import AppError from "../../error/AppError";
 import  httpStatus  from 'http-status';
 import { IEventDocument } from "../event/event.interface";
 import { Event } from "../event/event.model";
+import User from "../user/user.model";
+import SocialLink from "../sociallink/soscial.model";
+import { Category } from "../eventcatagore/eventcatagore.model";
 
 
 // ✅ Create Business (Add Business Details screen)
@@ -225,6 +228,55 @@ export const getActiveEventByBusinessService = async (req: Request): Promise<IEv
   return event;
 };
 
+import { Request } from 'express';
+import User from '../models/user.model';
+import SocialLink from '../models/socialLink.model';
+import Business from '../models/business.model';
+import { Category } from '../models/eventcatagore.model';
+import SubCategory from '../models/subCategory.model';
+
+// ✅ Get Home Page Data
+export const getHomePageService = async (req: Request) => {
+  const userId = req.user?.id;
+
+  // ── User info ─────────────────────────────────────────────────
+  const user = await User.findById(userId).select('fullName image email');
+  if (!user) throw new Error('User not found');
+
+  // ── User এর SocialLink (registration এ save হয়েছিল) ──────────
+  const socialLink = await SocialLink.findOne({ user: userId })
+    .populate('Buisness_Category', 'name slug image_url')
+    .populate('businesssub_category', 'name slug');
+
+  // ── Total category count (eventcatagore model থেকে) ────────────
+  const totalCategoryCount = await Category.countDocuments({ isActive: true });
+
+  // ── User এর selected sub-category অনুযায়ী businesses ──────────
+  let businesses: any[] = [];
+  if (socialLink?.businesssub_category) {
+    businesses = await Business.find({
+      business_sub_category: socialLink.businesssub_category,
+      is_active: true,
+    })
+      .populate('business_category', 'name slug')
+      .populate('business_sub_category', 'name slug')
+      .populate('host', 'fullName image')
+      .sort({ plan: -1, average_rating: -1 })
+      .limit(10);
+  }
+
+  return {
+    user: {
+      fullName: user.fullName,
+      image:    user.image,
+      email:    user.email,
+    },
+    socialLink,
+    totalCategoryCount,
+    businesses,
+  };
+};
+
 
 export const businessServices={
   createBusinessService,
@@ -232,5 +284,6 @@ export const businessServices={
   deleteBusinessService,
   getMyBusinessesService,
 getBusinessDetailsService,
-getActiveEventByBusinessService
+getActiveEventByBusinessService,
+getHomePageService
 }
