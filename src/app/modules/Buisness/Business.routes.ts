@@ -37,4 +37,10 @@ router.get('/analytics', auth(USER_ROLE.ORGANIZER), BusinessViewcontroller.getAn
 // ✅ Update Business Category
 router.patch('/update-category', auth(USER_ROLE.ORGANIZER), businessController.updateBusinessCategory);
 
+
+
+//user business gulo dekhte parbe, pro user gulo top e thakbe
+
+router.get('/get-businesses', auth(USER_ROLE.USER), businessController.getAllBusinesses);
+
 export const businessRoutes = router;

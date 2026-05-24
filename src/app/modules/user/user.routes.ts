@@ -12,6 +12,7 @@ const router = Router();
 
 
 
+router.get('/get-buser', userControllers.getAllOrganizers);  // GET /api/organizers
 
 
 router.get("/getby-roll", auth(UserRole.USER,UserRole.ORGANIZER, UserRole.admin), userControllers.getUsersByRole);

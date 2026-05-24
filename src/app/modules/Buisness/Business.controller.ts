@@ -104,7 +104,16 @@ export const updateBusinessCategory = catchAsync(async (req, res) => {
   });
 });
 
-
+export const getAllBusinesses = catchAsync(async (req, res) => {
+  const result = await businessServices.getAllBusinessesService(req);
+  sendResponse(res, {
+    statusCode: 200,
+    success:    true,
+    message:    'All businesses fetched successfully',
+    data:       result.data,
+    meta:       result.pagination,
+  });
+});
 
 
 
@@ -117,4 +126,5 @@ export const businessController = {
   getActiveEventByBusiness,
   getHomePage,
   updateBusinessCategory,
+  getAllBusinesses,
 }
