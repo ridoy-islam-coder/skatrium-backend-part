@@ -74,11 +74,11 @@ const SocialLinkSchema = new Schema<TSocialLink>(
     },
     businesssub_category: {
        type: Schema.Types.ObjectId,
-      ref: 'User',
+      ref: 'SubCategory',
     },
     Buisness_Category: {
       type: Schema.Types.ObjectId,
-      ref: 'User',
+      ref: 'Category',
     },
 
     Buisness_owner_Type: {

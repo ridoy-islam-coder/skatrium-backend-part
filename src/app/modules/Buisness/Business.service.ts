@@ -228,50 +228,43 @@ export const getActiveEventByBusinessService = async (req: Request): Promise<IEv
   return event;
 };
 
-import { Request } from 'express';
-import User from '../models/user.model';
-import SocialLink from '../models/socialLink.model';
-import Business from '../models/business.model';
-import { Category } from '../models/eventcatagore.model';
-import SubCategory from '../models/subCategory.model';
 
+// ✅ Get Home Page Data
 // ✅ Get Home Page Data
 export const getHomePageService = async (req: Request) => {
   const userId = req.user?.id;
 
   // ── User info ─────────────────────────────────────────────────
-  const user = await User.findById(userId).select('fullName image email');
+  const user = await User.findById(userId)
   if (!user) throw new Error('User not found');
 
-  // ── User এর SocialLink (registration এ save হয়েছিল) ──────────
-  const socialLink = await SocialLink.findOne({ user: userId })
-    .populate('Buisness_Category', 'name slug image_url')
+  // ── SocialLink with populate ──────────────────────────────────
+  const socialLinkRaw = await SocialLink.findOne({ user: userId })
+    .populate('Buisness_Category',    'name slug image_url')
     .populate('businesssub_category', 'name slug');
 
-  // ── Total category count (eventcatagore model থেকে) ────────────
+  // ── Total category count ──────────────────────────────────────
   const totalCategoryCount = await Category.countDocuments({ isActive: true });
 
-  // ── User এর selected sub-category অনুযায়ী businesses ──────────
+  // ── Businesses by sub-category ────────────────────────────────
   let businesses: any[] = [];
-  if (socialLink?.businesssub_category) {
+  if (socialLinkRaw?.businesssub_category) {
     businesses = await Business.find({
-      business_sub_category: socialLink.businesssub_category,
+      business_sub_category: socialLinkRaw.businesssub_category,
       is_active: true,
     })
-      .populate('business_category', 'name slug')
+      .populate('business_category',     'name slug')
       .populate('business_sub_category', 'name slug')
-      .populate('host', 'fullName image')
+      .populate('host',                  'fullName image')
       .sort({ plan: -1, average_rating: -1 })
       .limit(10);
   }
 
   return {
-    user: {
-      fullName: user.fullName,
-      image:    user.image,
-      email:    user.email,
-    },
-    socialLink,
+    Buisness_Category:    socialLinkRaw?.Buisness_Category    ?? null,
+    businesssub_category: socialLinkRaw?.businesssub_category ?? null,
+    Buisness_owner_Type:  socialLinkRaw?.Buisness_owner_Type  ?? null,
+    Buisness_Type:        socialLinkRaw?.Buisness_Type        ?? null,
     totalCategoryCount,
     businesses,
   };
