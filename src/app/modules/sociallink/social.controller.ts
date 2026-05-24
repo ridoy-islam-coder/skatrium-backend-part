@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import catchAsync from "../../utils/catchAsync";
-
+import { Request as ExpressRequest } from 'express';
 import  httpStatus  from 'http-status';
 import sendResponse from "../../utils/sendResponse";
 import { sosalServices } from "./social.service";
@@ -104,42 +104,52 @@ export const register = catchAsync(async (req: Request, res: Response) => {
 });
 
 
-
-// export const register = catchAsync(async (req: Request, res: Response) => {
-//   if (!req.body.data) {
-//     throw new AppError(httpStatus.BAD_REQUEST, "data field is required");
-//   }
-
-//   let body;
-//   try {
-//     body = JSON.parse(req.body.data);
-//   } catch (error) {
-//     throw new AppError(httpStatus.BAD_REQUEST, "Invalid JSON in data field");
-//   }
-
-//   const result = await sosalServices.register({
-//     ...body,
-//     file: req.file,
-//   });
-
-//   sendResponse(res, {
-//     statusCode: httpStatus.CREATED,
-//     success: true,
-//     message: "Registration completed successfully.",
-//     data: result,
-//   });
-// });
-
-
-
+// ═══════════════════════════════════════════════════════════════════
+//  Create Merchant Shop
+// ═══════════════════════════════════════════════════════════════════
+// ✅ এইভাবে করো — req, res দুটোই দাও
+export const createMerchantShop = catchAsync(async (req, res) => {
+  const result = await sosalServices.createMerchantShopService(req);
+  sendResponse(res, {
+    statusCode: 201,
+    success:    true,
+    message:    'Merchant shop created successfully',
+    data:       result,
+  });
+});
+ 
+// ═══════════════════════════════════════════════════════════════════
+//  Update Merchant Shop
+// ═══════════════════════════════════════════════════════════════════
+export const updateMerchantShop = catchAsync(async (req, res) => {
+  const result = await sosalServices.updateMerchantShopService(req);
+  sendResponse(res, {
+    statusCode: 200,
+    success:    true,
+    message:    'Merchant shop updated successfully',
+    data:       result,
+  });
+});
 
 
 
+export const getMerchantShop = catchAsync(async (req, res) => {
+  const result = await sosalServices.getMerchantShopService(req);
+  sendResponse(res, {
+    statusCode: 200,
+    success:    true,
+    message:    'Merchant shop fetched successfully',
+    data:       result,
+  });
+});
  
 export const socialControllers = {
   register,
   updateProfile,
   getProfile,
   // login,
+  createMerchantShop,
+  updateMerchantShop,
+  getMerchantShop,
 };
  

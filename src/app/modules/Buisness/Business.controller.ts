@@ -90,6 +90,24 @@ export const getHomePage = catchAsync(async (req, res) => {
  
 
 
+
+
+
+
+export const updateBusinessCategory = catchAsync(async (req, res) => {
+  const result = await businessServices.updateBusinessCategoryService(req);
+  sendResponse(res, {
+    statusCode: 200,
+    success:    true,
+    message:    'Business category updated successfully',
+    data:       result,
+  });
+});
+
+
+
+
+
 export const businessController = {
   createBusiness,
   updateBusiness,
@@ -97,5 +115,6 @@ export const businessController = {
   getMyBusinesses,
   getBusinessDetails,
   getActiveEventByBusiness,
-  getHomePage
+  getHomePage,
+  updateBusinessCategory,
 }

@@ -15,13 +15,26 @@ export interface TSocialLink {
   tiktok?: string;
   shoplink?: string;
   website?: string;
+   image?: {
+    id:  string;
+    url: string;
+  };
   createdAt?: Date;
   updatedAt?: Date;
   businesssub_category?: Types.ObjectId;
   Buisness_Category: Types.ObjectId;
   Buisness_owner_Type: string;
   Buisness_Type: string;
+  Second_BuisnessCategory?: Types.ObjectId;
+  Second_BusinessSubCategory?: Types.ObjectId;
 }
+
+
+const imageSchema = new Schema({
+  id:  { type: String, required: true },
+  url: { type: String, default: "", required: true },
+  default: {},
+});
 // ─── Schema ───────────────────────────────────────────────────────────────────
 const SocialLinkSchema = new Schema<TSocialLink>(
   {
@@ -72,6 +85,11 @@ const SocialLinkSchema = new Schema<TSocialLink>(
       type: String,
       default: '',
     },
+    //  image: imageSchema,
+    image: {
+      type: imageSchema,
+      default: null,
+    },
     businesssub_category: {
        type: Schema.Types.ObjectId,
       ref: 'SubCategory',
@@ -80,11 +98,19 @@ const SocialLinkSchema = new Schema<TSocialLink>(
       type: Schema.Types.ObjectId,
       ref: 'Category',
     },
-
+     Second_BuisnessCategory: {
+      type: Schema.Types.ObjectId,
+      ref: 'Category',
+    },
+      Second_BusinessSubCategory: {
+       type: Schema.Types.ObjectId,
+      ref: 'SubCategory',
+    },
     Buisness_owner_Type: {
       type: String,
       default: '',
     },
+
     Buisness_Type: {
       type: String,
       default: '',

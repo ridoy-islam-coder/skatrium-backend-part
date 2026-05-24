@@ -271,6 +271,56 @@ export const getHomePageService = async (req: Request) => {
 };
 
 
+
+
+
+// ═══════════════════════════════════════════════════════════════════
+//  Update Business Category Service
+// ═══════════════════════════════════════════════════════════════════
+export const updateBusinessCategoryService = async (req: Request) => {
+  const userId = req.user?.id;
+
+  const {
+    Buisness_Category,
+    businesssub_category,
+    Second_BuisnessCategory,
+    Second_BusinessSubCategory,
+  } = req.body;
+
+  const updated = await SocialLink.findOneAndUpdate(
+    { user: userId },
+    {
+      $set: {
+        Buisness_Category,
+        businesssub_category,
+        Second_BuisnessCategory,
+        Second_BusinessSubCategory,
+      },
+    },
+    { new: true, runValidators: true }
+  )
+    .populate('Buisness_Category',         'name slug')
+    .populate('businesssub_category',      'name slug')
+    .populate('Second_BuisnessCategory',   'name slug')
+    .populate('Second_BusinessSubCategory','name slug');
+
+  if (!updated) {
+    throw new AppError(httpStatus.NOT_FOUND, 'SocialLink not found');
+  }
+
+  return {
+    Buisness_Category:          updated.Buisness_Category,
+    businesssub_category:       updated.businesssub_category,
+    Second_BuisnessCategory:    updated.Second_BuisnessCategory,
+    Second_BusinessSubCategory: updated.Second_BusinessSubCategory,
+  };
+};
+
+
+
+
+
+
 export const businessServices={
   createBusinessService,
   updateBusinessService,
@@ -278,5 +328,6 @@ export const businessServices={
   getMyBusinessesService,
 getBusinessDetailsService,
 getActiveEventByBusinessService,
-getHomePageService
+getHomePageService,
+updateBusinessCategoryService,
 }

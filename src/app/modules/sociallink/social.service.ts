@@ -8,6 +8,7 @@ import { deleteFromS3, deleteManyFromS3, uploadToS3 } from "../../utils/fileHelp
 import mongoose from "mongoose";
 import { JwtPayload } from "jsonwebtoken";
 import { Personalization } from "../Personalizationuser/Personalization.model";
+import { Request as ExpressRequest } from 'express';
 
 // const register = async (payload: {
 //   fullName: string;
@@ -452,131 +453,126 @@ export const register = async (payload: any) => {
 };
 
 
-// export const register = async (payload: any) => {
-//   const {
-//     fullName,
-//     email,
-//     password,
-//     confirmPassword,
-//     role,
-//     country,
-//     phoneNumber,
-//     howDidYouHear,
-//     subscribeToEmails,
-//     termsAccepted,
-//     shopName,
-//     shoptype,
-//     facebook,
-//     instagram,
-//     linkedin,
-//     twitter,
-//     youtube,
-//     tiktok,
-//     website,
-//     shoplink,
-//     file,
-//   } = payload;
-
-//   // ✅ boolean convert — JSON.parse এ true/false ঠিকমতো আসে
-//   const isTermsAccepted = termsAccepted === true || termsAccepted === "true";
-//   const isSubscribed = subscribeToEmails === true || subscribeToEmails === "true";
-
-//   if (!isTermsAccepted) {
-//     throw new AppError(httpStatus.BAD_REQUEST, "Accept terms first");
-//   }
-//   if (password !== confirmPassword) {
-//     throw new AppError(httpStatus.BAD_REQUEST, "Password not match");
-//   }
-//   if (password.length < 6) {
-//     throw new AppError(httpStatus.BAD_REQUEST, "Password too short");
-//   }
-
-//   const existingUser = await User.findOne({ email });
-//   if (existingUser) {
-//     throw new AppError(httpStatus.CONFLICT, "Email already exists");
-//   }
-
-//   if (phoneNumber) {
-//     const existingPhone = await User.findOne({ phoneNumber });
-//     if (existingPhone) {
-//       throw new AppError(httpStatus.CONFLICT, "Phone already exists");
-//     }
-//   }
-
-//   let uploadedImage;
-//   if (file) {
-//     uploadedImage = await uploadToS3(file, "user");
-//   }
-
-//   const user = await User.create({
-//     fullName,
-//     email,
-//     password,
-//     role,
-//     image: uploadedImage
-//       ? { id: uploadedImage.id, url: uploadedImage.url }
-//       : undefined,
-//     country: country || undefined,
-//     phoneNumber: phoneNumber || undefined,
-//     howDidYouHear: howDidYouHear || "",
-//     subscribeToEmails: isSubscribed,
-//     termsAccepted: isTermsAccepted,
-//     accountType: "emailvarifi",
-//     isVerified: false,
-//     isActive: true,
-//     needsPasswordChange: false,
-//   });
-
-//   const hasSocialData =
-//     shopName || shoptype || facebook || instagram ||
-//     linkedin || twitter || youtube || tiktok || website || shoplink;
-
-//   if (hasSocialData) {
-//     await SocialLink.create({
-//       user: user._id,
-//       shopName: shopName || "",
-//       shoptype: shoptype || "",
-//       facebook: facebook || "",
-//       instagram: instagram || "",
-//       linkedin: linkedin || "",
-//       twitter: twitter || "",
-//       youtube: youtube || "",
-//       tiktok: tiktok || "",
-//       website: website || "",
-//       shoplink: shoplink || "",
-//     });
-//   }
-
-//   const jwtPayload = {
-//     userId: user._id.toString(),
-//     role: user.role,
-//   };
-
-//   const accessToken = createToken(
-//     jwtPayload,
-//     config.jwt.jwt_access_secret as string,
-//     config.jwt.jwt_access_expires_in as string,
-//   );
-
-//   return {
-//     user: {
-//       _id: user._id,
-//       fullName: user.fullName,
-//       email: user.email,
-//       role: user.role,
-//       image: user.image,
-//       isVerified: user.isVerified,
-//     },
-//     accessToken,
-//   };
-// };
 
 
 
+// ═══════════════════════════════════════════════════════════════════
+//  Create Merchant Shop Service
+// ═══════════════════════════════════════════════════════════════════
+export const createMerchantShopService = async (req: ExpressRequest) => {
+  const userId = req.user?.id;
+  const files  = req.files as { [fieldname: string]: Express.Multer.File[] };
+ 
+  // ── Check already exists ──────────────────────────────────────
+  const existing = await SocialLink.findOne({ user: userId });
+  if (existing) {
+    throw new AppError(httpStatus.BAD_REQUEST, 'Merchant shop already exists. Use update instead.');
+  }
+ 
+  // ── Image upload ──────────────────────────────────────────────
+  let image = { id: '', url: '' };
+ 
+  if (files?.image?.[0]) {
+    // uploadToS3(file, fileName) → { id: uniqueFileName, url: s3Url }
+    const uploaded = await uploadToS3(files.image[0], 'merchant/profile');
+    image          = { id: uploaded.id, url: uploaded.url };  // ✅
+  }
+ 
+  const {
+    shopName, shoptype, shoplink,
+    facebook, instagram, linkedin, twitter, youtube, tiktok, website,
+    Buisness_Category, businesssub_category, Buisness_owner_Type, Buisness_Type,
+    Second_BuisnessCategory, Second_BusinessSubCategory,
+  } = req.body;
+ 
+  const socialLink = await SocialLink.create({
+    user: userId,
+    shopName, shoptype, shoplink,
+    facebook, instagram, linkedin, twitter, youtube, tiktok, website,
+    image,                                                     // ✅ { id, url }
+    Buisness_Category, businesssub_category,
+    Buisness_owner_Type, Buisness_Type,
+    Second_BuisnessCategory, Second_BusinessSubCategory,
+  });
+ 
+  return socialLink;
+};
+ 
+// ═══════════════════════════════════════════════════════════════════
+//  Update Merchant Shop Service
+// ═══════════════════════════════════════════════════════════════════
+export const updateMerchantShopService = async (req: ExpressRequest) => {
+  const userId = req.user?.id;
+  const files  = req.files as { [fieldname: string]: Express.Multer.File[] };
+ 
+  // ── Find existing ─────────────────────────────────────────────
+  const existing = await SocialLink.findOne({ user: userId });
+  if (!existing) {
+    throw new AppError(httpStatus.NOT_FOUND, 'Merchant shop not found');
+  }
+ 
+  // ── Image update ──────────────────────────────────────────────
+  let image = {
+    id:  existing.image?.id  ?? '',
+    url: existing.image?.url ?? '',
+  };
+ 
+  if (files?.image?.[0]) {
+    // পুরনো image S3 থেকে delete করো
+    if (existing.image?.id) {
+      await deleteFromS3(existing.image.id);                   // ✅ key দিয়ে delete
+    }
+    const uploaded = await uploadToS3(files.image[0], 'merchant/profile');
+    image          = { id: uploaded.id, url: uploaded.url };  // ✅ নতুন { id, url }
+  }
+ 
+  const {
+    shopName, shoptype, shoplink,
+    facebook, instagram, linkedin, twitter, youtube, tiktok, website,
+    Buisness_Category, businesssub_category, Buisness_owner_Type, Buisness_Type,
+    Second_BuisnessCategory, Second_BusinessSubCategory,
+  } = req.body;
+ 
+  const updated = await SocialLink.findOneAndUpdate(
+    { user: userId },
+    {
+      $set: {
+        shopName, shoptype, shoplink,
+        facebook, instagram, linkedin, twitter, youtube, tiktok, website,
+        image,                                                 // ✅ { id, url }
+        Buisness_Category, businesssub_category,
+        Buisness_owner_Type, Buisness_Type,
+        Second_BuisnessCategory, Second_BusinessSubCategory,
+      },
+    },
+    { new: true, runValidators: true }
+  );
+ 
+  return updated;
+};
 
 
+
+export const getMerchantShopService = async (req: ExpressRequest) => {
+  const userId = req.user?.id;
+
+  const socialLink = await SocialLink.findOne({ user: userId })
+    .populate('Buisness_Category',          'name slug')
+    .populate('businesssub_category',       'name slug')
+    .populate('Second_BuisnessCategory',    'name slug')
+    .populate('Second_BusinessSubCategory', 'name slug');
+
+  if (!socialLink) {
+    throw new AppError(httpStatus.NOT_FOUND, 'Merchant shop not found');
+  }
+
+  return socialLink;
+};
 export const sosalServices = {
   register,
   updateProfile,
   getProfile,
+  createMerchantShopService,
+  updateMerchantShopService,
+  getMerchantShopService,
 };
