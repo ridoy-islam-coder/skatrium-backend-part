@@ -193,19 +193,31 @@ export const updateEventService = async (req: Request): Promise<IEventDocument> 
   return event;
 };
 
-// ✅ Add Promotion to Event
+// ✅ Add Promotion — businessID দিয়ে event খুঁজে promotion add করবে
 export const addEventPromotionService = async (req: Request): Promise<IEventDocument> => {
-  const { id } = req.params;
   const userId = req.user?.id;
-
-  const event = await Event.findOne({ _id: id, host: userId });
-  if (!event) throw new Error('Event not found or unauthorized');
-
-  event.promotions.push(req.body);
+ 
+  const {
+    businessID,
+    title,
+    description,
+    discount_percentage,
+    last_date,
+    lest_time,
+  } = req.body;
+ 
+  if (!title) throw new Error('Promotion title is required');
+ 
+  // ── শুধু active (isPast: false) event এ promotion add হবে ──
+  const event = await Event.findOne({ businessID, host: userId, isPast: false }) as IEventDocument | null;
+  if (!event) throw new Error('No active event found. Please create an event first.');
+ 
+  event.promotions.push({ title, description, discount_percentage, last_date, lest_time });
   await event.save();
-
+ 
   return event;
 };
+
 
 // ✅ Mark Event as Past
 export const markEventAsPastService = async (req: Request): Promise<IEventDocument> => {

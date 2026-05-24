@@ -21,7 +21,7 @@ const promotionSchema = new Schema<IPromotion>({
 
 const eventSchema = new Schema<IEvent>(
   {
-    eventtitle: {  type: String,ref: 'Business',required: true,},
+    eventtitle: { type:String ,required: true },
     eventsubtitle: { type:String ,required: true },
 
       businessID: {

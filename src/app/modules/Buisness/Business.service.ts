@@ -4,6 +4,8 @@ import { deleteFromS3, uploadManyToS3, uploadToS3 } from "../../utils/fileHelper
 import Business from "./Business.model";
 import AppError from "../../error/AppError";
 import  httpStatus  from 'http-status';
+import { IEventDocument } from "../event/event.interface";
+import { Event } from "../event/event.model";
 
 
 // ✅ Create Business (Add Business Details screen)
@@ -207,10 +209,28 @@ export const getBusinessDetailsService = async (req: Request) => {
 };
 
 
+
+
+
+// ✅ Get Active Event by BusinessID — isPast: false event এর data আসবে
+export const getActiveEventByBusinessService = async (req: Request): Promise<IEventDocument> => {
+  const { businessID } = req.body;
+ 
+  const event = await Event.findOne({ businessID, isPast: false })
+    .populate('businessID', 'business_name business_image location')
+    .populate('host', 'fullName image') as IEventDocument | null;
+ 
+  if (!event) throw new Error('No active event found for this business');
+ 
+  return event;
+};
+
+
 export const businessServices={
   createBusinessService,
   updateBusinessService,
   deleteBusinessService,
   getMyBusinessesService,
 getBusinessDetailsService,
+getActiveEventByBusinessService
 }

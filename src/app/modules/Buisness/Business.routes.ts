@@ -23,6 +23,6 @@ router.patch('/update-business/:id',auth(USER_ROLE.USER), businessFileFields, bu
 
 router.delete('/delete-business/:id', auth(USER_ROLE.USER), businessController.deleteBusiness);
 
-
+router.post('/active',auth(USER_ROLE.USER), businessController.getActiveEventByBusiness); // body: { businessID }
 
 export const businessRoutes = router;

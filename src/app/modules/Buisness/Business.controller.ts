@@ -59,10 +59,31 @@ export const getBusinessDetails = catchAsync(async (req, res) => {
   });
 });
 
+
+
+
+
+
+
+// ✅ Get Active Event by BusinessID
+export const getActiveEventByBusiness = catchAsync(async (req, res) => {
+  const result = await businessServices.getActiveEventByBusinessService(req);
+  sendResponse(res, {
+    statusCode: 200,
+    success:    true,
+    message:    'Active event fetched successfully',
+    data:       result,
+  });
+});
+
+
+
+
 export const businessController = {
   createBusiness,
   updateBusiness,
   deleteBusiness,
   getMyBusinesses,
-  getBusinessDetails
+  getBusinessDetails,
+  getActiveEventByBusiness
 }
