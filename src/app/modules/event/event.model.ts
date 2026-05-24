@@ -21,16 +21,16 @@ const promotionSchema = new Schema<IPromotion>({
 
 const eventSchema = new Schema<IEvent>(
   {
-    eventtitle: { type:String ,required: true },
-    eventsubtitle: { type:String ,required: true },
+    eventtitle: { type:String , },
+    eventsubtitle: { type:String , },
 
       businessID: {
       type: Schema.Types.ObjectId,
       ref: 'Business',
       required: true,
     },
-    date: { type: Date, required: true },
-    time: { type: String, default: "" },
+    // date: { type: Date, required: true },
+    // time: { type: String, default: "" },
   
 
 
@@ -66,19 +66,20 @@ const eventSchema = new Schema<IEvent>(
 );
 
 
-eventSchema.index({ location: "2dsphere" });
-
-// ── filter deleted ────────────────────────────────────────
+ 
+eventSchema.index({ businessID: 1 });
+ 
 eventSchema.pre("find", function (next) {
-  this.find({ isDeleted: { $ne: true } });
+  this.where({ isDeleted: { $ne: true } });
   next();
 });
-
+ 
 eventSchema.pre("findOne", function (next) {
-  this.find({ isDeleted: { $ne: true } });
+  this.where({ isDeleted: { $ne: true } });
   next();
 });
 
-export const Event = model<IEvent>("Event", eventSchema);
+
+export const Event= model<IEvent>("Event", eventSchema);
 
 

@@ -30,7 +30,7 @@ router.post('/create-event',auth(USER_ROLE.USER), eventFileFields,eventControlle
  
 router.patch('/:id',eventFileFields,eventController.updateEvent);
  
-router.post('/promotion',  eventController.addEventPromotion);
+router.post('/promotion',auth(USER_ROLE.USER),  eventController.addEventPromotion);
 router.patch('/:id/mark-past', eventController.markEventAsPast);
 router.delete('/:id',          eventController.deleteEvent);
 

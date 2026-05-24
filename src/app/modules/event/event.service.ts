@@ -1,7 +1,9 @@
 import { Request } from "express";
 import { deleteFromS3, deleteManyFromS3, uploadManyToS3, uploadToS3 } from "../../utils/fileHelper";
-import { Event } from "./event.model";
+
 import { IEventDocument } from "./event.interface";
+import mongoose from "mongoose";
+import { Event  } from "./event.model";
 
 
 
@@ -116,43 +118,83 @@ export const getEventByIdService = async (req: Request): Promise<IEventDocument>
   return event;
 };
 
-// ✅ Create Event — একটা businessID দিয়ে শুধু একটাই event বানানো যাবে
 export const createEventService = async (req: Request): Promise<IEventDocument> => {
-  const userId         = req.user?.id;
-  const { businessID } = req.body;
-  const files          = req.files as { [fieldname: string]: Express.Multer.File[] };
-
-  // ── Check: এই businessID দিয়ে আগে event আছে কিনা ─────────────
-  const existingEvent = await Event.findOne({ businessID });
-  if (existingEvent) {
-    throw new Error('An event already exists for this business. You cannot create another one.');
-  }
-
-  // ── Cover image upload ────────────────────────────────────────
-  let coverImage = { id: '', url: '' };
+  const userId = req.user?.id;
+  const files  = req.files as { [fieldname: string]: Express.Multer.File[] };
+ 
+  const {
+    businessID,
+    eventtitle,
+    eventsubtitle,
+    date,
+    time,
+    description,
+  } = req.body;
+ 
+  // ── Active event খোঁজো — isPast: false ─────────────────────────
+  // একটা businessID তে একটাই active event থাকবে
+  const activeEvent = await Event.findOne({
+    businessID,   // plain string — DB তে string হিসেবে save আছে
+    isPast: false,
+  }) as IEventDocument | null;
+ 
+  // ── Cover image ───────────────────────────────────────────────
+  let coverImage = activeEvent?.coverImage ?? { id: '', url: '' };
   if (files?.coverImage?.[0]) {
+    if (activeEvent?.coverImage?.id) await deleteFromS3(activeEvent.coverImage.id);
     const uploaded = await uploadToS3(files.coverImage[0], 'event/cover');
     coverImage     = { id: uploaded.id, url: uploaded.url };
   }
-
-  // ── Gallery upload ────────────────────────────────────────────
-  let gallery: { id: string; url: string }[] = [];
+ 
+  // ── Gallery ───────────────────────────────────────────────────
+  let gallery = activeEvent?.gallery ?? [];
   if (files?.gallery?.length) {
+    const oldKeys = (activeEvent?.gallery ?? []).map((g) => g.id).filter(Boolean);
+    if (oldKeys.length) await deleteManyFromS3(oldKeys);
     const uploaded = await uploadManyToS3(
       files.gallery.map((file) => ({ file, path: 'event/gallery' }))
     );
     gallery = uploaded.map((g) => ({ id: g.id, url: g.url }));
   }
-
-  const event = await Event.create({
-    ...req.body,
-    host: userId,
-    coverImage,
-    gallery,
-  });
-
+ 
+  let event: IEventDocument;
+ 
+  if (activeEvent) {
+    // ── isPast: false → existing event UPDATE ─────────────────
+    const updated = await Event.findByIdAndUpdate(
+      activeEvent._id,
+      {
+        eventtitle,
+        eventsubtitle,
+        date,
+        time,
+        description,
+        coverImage,
+        gallery,
+      },
+      { new: true, runValidators: true }
+    ).populate('businessID', 'business_name business_image') as IEventDocument;
+ 
+    event = updated;
+  } else {
+    // ── isPast: true (কোনো active event নেই) → নতুন CREATE ────
+    event = await Event.create({
+      businessID,
+      eventtitle,
+      eventsubtitle,
+      date,
+      time,
+      description,
+      host: userId,
+      coverImage,
+      gallery,
+      isPast: false,
+    }) as IEventDocument;
+  }
+ 
   return event;
 };
+
 
 // ✅ Update Event
 export const updateEventService = async (req: Request): Promise<IEventDocument> => {
@@ -193,7 +235,7 @@ export const updateEventService = async (req: Request): Promise<IEventDocument> 
   return event;
 };
 
-// ✅ Add Promotion — businessID দিয়ে event খুঁজে promotion add করবে
+// ✅ Upsert Promotion — event না থাকলে create, promotion থাকলে update নাহলে add
 export const addEventPromotionService = async (req: Request): Promise<IEventDocument> => {
   const userId = req.user?.id;
  
@@ -208,15 +250,52 @@ export const addEventPromotionService = async (req: Request): Promise<IEventDocu
  
   if (!title) throw new Error('Promotion title is required');
  
-  // ── শুধু active (isPast: false) event এ promotion add হবে ──
-  const event = await Event.findOne({ businessID, host: userId, isPast: false }) as IEventDocument | null;
-  if (!event) throw new Error('No active event found. Please create an event first.');
+  // ── active event খোঁজো ───────────────────────────────────────
+  let event = await Event.findOne({
+    businessID,
+    isPast: false,
+  }) as IEventDocument | null;
  
-  event.promotions.push({ title, description, discount_percentage, last_date, lest_time });
+  // ── event না থাকলে businessID + userId দিয়ে নতুন create ──────
+  if (!event) {
+    event = await Event.create({
+      businessID,
+      host:   userId,
+      isPast: false,
+    }) as IEventDocument;
+  }
+ 
+  // ── same title এর promotion আগে আছে কিনা check ───────────────
+  const existingIndex = event.promotions.findIndex(
+    (p) => p.title === title
+  );
+ 
+  if (existingIndex !== -1) {
+    // ── আছে → update করো ────────────────────────────────────
+    event.promotions[existingIndex] = {
+      title,
+      description,
+      discount_percentage,
+      last_date,
+      lest_time,
+    };
+  } else {
+    // ── নেই → নতুন add করো ──────────────────────────────────
+    event.promotions.push({
+      title,
+      description,
+      discount_percentage,
+      last_date,
+      lest_time,
+    });
+  }
+ 
   await event.save();
  
   return event;
 };
+
+
 
 
 // ✅ Mark Event as Past
