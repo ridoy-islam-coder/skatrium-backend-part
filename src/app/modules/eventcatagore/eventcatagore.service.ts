@@ -270,7 +270,7 @@ const getAllCategories = async (filters: ICategoryFilter, query: any) => {
 //   };
 // };
 
-import mongoose from "mongoose";
+import mongoose, { PipelineStage } from "mongoose";
 
 const getEventsByCategoryId = async (categoryId: string, query: any) => {
   const { page, limit, skip } = getPaginationOptions(query);
@@ -314,6 +314,104 @@ console.log("categoryId:", categoryId);
     })),
     data: events,
     meta: paginationResult(total, page, limit),
+  };
+};
+
+
+
+
+
+
+
+
+
+
+export const getAllCategoriesServiceuser = async (req: any) => {
+  const page     = parseInt(req.query.page     as string) || 1;
+  const limit    = parseInt(req.query.limit    as string) || 10;
+  const skip     = (page - 1) * limit;
+  const search   = (req.query.search    as string)?.trim() || '';
+  const isActive = req.query.isActive   as string;
+  const isPopular = req.query.isPopular as string;
+
+  // ── Base match ────────────────────────────────────────────────
+  const baseMatch: any = {};
+
+  if (search) {
+    baseMatch.$or = [
+      { name:        { $regex: search, $options: 'i' } },
+      { description: { $regex: search, $options: 'i' } },
+    ];
+  }
+
+  if (isActive !== undefined && isActive !== '') {
+    baseMatch.isActive = isActive === 'true';
+  }
+
+  if (isPopular !== undefined && isPopular !== '') {
+    baseMatch.isPopular = isPopular === 'true';
+  }
+
+  const pipeline: PipelineStage[] = [];
+
+  if (Object.keys(baseMatch).length > 0) {
+    pipeline.push({ $match: baseMatch });
+  }
+
+  // ── eventCount virtual এর বদলে $lookup দিয়ে count আনো ────────
+  pipeline.push(
+    {
+      $lookup: {
+        from:         'events',
+        localField:   '_id',
+        foreignField: 'category',
+        as:           'events',
+      },
+    },
+    {
+      $addFields: {
+        eventCount: { $size: '$events' },
+      },
+    },
+    {
+      $project: {
+        events: 0,  // raw events array বাদ দাও
+        __v:    0,
+      },
+    },
+  );
+
+  // ── Sort: popular আগে, তারপর নতুন ────────────────────────────
+  pipeline.push({
+    $sort: { isPopular: -1, createdAt: -1 },
+  });
+
+  // ── Facet: data + totalCount ──────────────────────────────────
+  pipeline.push({
+    $facet: {
+      data: [
+        { $skip:  skip  },
+        { $limit: limit },
+      ],
+      totalCount: [{ $count: 'count' }],
+    },
+  });
+
+  const [result] = await Category.aggregate(pipeline);
+
+  const data  = result?.data               ?? [];
+  const total = result?.totalCount[0]?.count ?? 0;
+
+  return {
+    data,
+    pagination: {
+      total,
+      page,
+      limit,
+      totalPage:   Math.ceil(total / limit),
+      hasNextPage: page < Math.ceil(total / limit),
+      hasPrevPage: page > 1,
+    },
   };
 };
 

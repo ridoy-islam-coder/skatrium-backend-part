@@ -27,5 +27,13 @@ router.get("/getAllCategories",  categoryController.getAllCategories);
 router.get("/details/:id",auth(USER_ROLE.USER,USER_ROLE.admin), categoryController.getCategoryByIdnew);
 
 router.get("/events",auth(USER_ROLE.USER,USER_ROLE.admin), categoryController.getEventsByCategoryId);
+
+
+
+// user er jonno
+
+// # সব একসাথে
+// GET /categories?search=music&isActive=true&isPopular=true&page=1&limit=10
+router.get("/user/getAllCategories", categoryController.getAllCategories);
  
 export const catagoreeventRoutes = router;

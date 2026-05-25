@@ -2,8 +2,8 @@ import { Request, Response } from 'express';
 import httpStatus from 'http-status';
 import catchAsync from '../../utils/catchAsync';
 import sendResponse from '../../utils/sendResponse';
-import { categoryServices } from './eventcatagore.service';
-import { Category } from './eventcatagore.model';
+import { categoryServices, getAllCategoriesServiceuser } from './eventcatagore.service';
+
 import { ICategoryFilter } from './eventcatagore.interface';
 
 
@@ -143,6 +143,27 @@ console.log("query.categories:",  req.query);
   });
 });
 
+
+
+
+
+
+
+
+export const getAllCategoriesuser = catchAsync(async (req: Request, res: Response) => {
+  const result = await getAllCategoriesServiceuser(req);
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success:    true,
+    message:    'Categories fetched successfully',
+    data:       result.data,
+    meta:       result.pagination,
+  });
+});
+
+
+
 export const categoryController = {
   createCategory,
   getAllCategories,
@@ -152,4 +173,5 @@ export const categoryController = {
 //   getAllCategoriesroute,
   getCategoryByIdnew,
   getEventsByCategoryId,
+  getAllCategoriesuser,
 };

@@ -276,6 +276,9 @@ UserSchema.pre('aggregate', function (next) {
   this.pipeline().unshift({ $match: { isDeleted: { $ne: true } } });
   next();
 });
+
+// user.model.ts এ add করো (schema এর পরে)
+UserSchema.index({ location: '2dsphere' });
 // Create and export the User model
 const User = model<TUser, UserModel>('User', UserSchema);
 
