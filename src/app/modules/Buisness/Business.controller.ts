@@ -1,6 +1,8 @@
 import catchAsync from "../../utils/catchAsync";
 import sendResponse from "../../utils/sendResponse";
-import { businessServices } from "./Business.service";
+import { businessServices, getBusinessReviewsService } from "./Business.service";
+import  httpStatus  from 'http-status';
+
 
 
 // ✅ Create Business (Add Business Details screen)
@@ -117,6 +119,38 @@ export const getAllBusinesses = catchAsync(async (req, res) => {
 
 
 
+// business.controller.ts
+
+export const getBusinessReviews = catchAsync(async (req, res) => {
+  const result = await getBusinessReviewsService(req);
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success:    true,
+    message:    'Business reviews fetched successfully',
+     data:       result.reviews,
+    meta: result.pagination,            // ✅ শুধু pagination
+  });
+});
+
+
+
+
+
+
+const getBusinessByUser = catchAsync(async (req, res) => {
+  const userId = req.params.userId;
+
+  const result = await businessServices.getBusinessByUserId(userId as string);
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: 'Businesses fetched successfully',
+    data: result,
+  });
+});
+
 export const businessController = {
   createBusiness,
   updateBusiness,
@@ -127,4 +161,6 @@ export const businessController = {
   getHomePage,
   updateBusinessCategory,
   getAllBusinesses,
+  getBusinessReviews,
+  getBusinessByUser
 }

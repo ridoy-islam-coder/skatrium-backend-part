@@ -3,8 +3,9 @@ import catchAsync from "../../utils/catchAsync";
 import { Request as ExpressRequest } from 'express';
 import  httpStatus  from 'http-status';
 import sendResponse from "../../utils/sendResponse";
-import { sosalServices } from "./social.service";
+import { getAllMerchantsService, sosalServices } from "./social.service";
 import AppError from "../../error/AppError";
+import SocialLink from "./soscial.model";
 
 // Register + Merchant Profile একসাথে
 // const register = catchAsync(async (req: Request, res: Response) => {
@@ -143,6 +144,43 @@ export const getMerchantShop = catchAsync(async (req, res) => {
   });
 });
  
+
+
+const getMerchantShopByUserId = catchAsync(async (req, res) => {
+  const userId = req.params.userId;
+
+  const result = await SocialLink.findOne({ user: userId })
+    .populate('Buisness_Category')
+    .populate('businesssub_category')
+    .populate('Second_BuisnessCategory')
+    .populate('Second_BusinessSubCategory');
+
+  if (!result) {
+    throw new AppError(httpStatus.NOT_FOUND, 'Shop not found');
+  }
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: 'Merchant shop fetched successfully',
+    data: result,
+  });
+});
+
+// merchant.controller.ts
+
+export const getAllMerchants = catchAsync(async (req: Request, res: Response) => {
+  const result = await getAllMerchantsService(req);
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success:    true,
+    message:    'Merchants fetched successfully',
+    data:       result.data,
+    meta:       result.pagination,
+  });
+});
+
 export const socialControllers = {
   register,
   updateProfile,
@@ -151,5 +189,6 @@ export const socialControllers = {
   createMerchantShop,
   updateMerchantShop,
   getMerchantShop,
+  getMerchantShopByUserId,
 };
  

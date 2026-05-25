@@ -51,6 +51,7 @@ export interface IProduct extends Document {
   isDeleted?: boolean;
   stock?: number;
   material?: string;
+  shopID: Types.ObjectId;
   discountPrice?: number;
   createdAt?: Date;
   updatedAt?: Date;

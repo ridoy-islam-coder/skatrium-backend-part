@@ -26,11 +26,11 @@ router.get('/:id', eventController.getEventById);
  
 router.get('/my/all', eventController.getMyEvents);
  
-router.post('/create-event',auth(USER_ROLE.USER), eventFileFields,eventController.createEvent);
+router.post('/create-event',auth(USER_ROLE.OWNER), eventFileFields,eventController.createEvent);
  
 router.patch('/:id',eventFileFields,eventController.updateEvent);
  
-router.post('/promotion',auth(USER_ROLE.USER),  eventController.addEventPromotion);
+router.post('/promotion',auth(USER_ROLE.OWNER),  eventController.addEventPromotion);
 router.patch('/:id/mark-past', eventController.markEventAsPast);
 router.delete('/:id',          eventController.deleteEvent);
 

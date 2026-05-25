@@ -86,6 +86,7 @@ export const createProductService = async (
     stock,
     shippingCost,
     colors,
+    shopID,
     sizes,
     material,
   } = req.body;
@@ -114,6 +115,7 @@ export const createProductService = async (
     sizes: sizes ? JSON.parse(sizes) : [],
     images: images || [],
     host: userId,
+    shopID: shopID || undefined,
     material: material || "",
   });
 
@@ -145,6 +147,7 @@ export const updateProductService = async (
     shippingCost,
     colors,
     sizes,
+    shopID,
   } = req.body;
 
   const updateData: any = {
@@ -158,6 +161,7 @@ export const updateProductService = async (
     ...(colors && { colors: JSON.parse(colors) }),
     ...(sizes && { sizes: JSON.parse(sizes) }),
     ...(images && images.length > 0 && { images }),
+    ...(shopID && { shopID }),
   };
 
   const product = await Product.findByIdAndUpdate(id, updateData, { new: true });

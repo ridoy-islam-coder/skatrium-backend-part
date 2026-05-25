@@ -90,7 +90,7 @@ const getAllCategories = catchAsync(async (req: Request, res: Response) => {
     success: true,
     message: "Categories fetched successfully",
     data: result.data,
-    meta: result.meta, // ✅ এখন TMeta এর সাথে match করবে
+    meta: result.meta, 
   });
 });
 
@@ -136,7 +136,7 @@ console.log("query.categories:",  req.query);
     success: true,
     message: "Events fetched successfully",
     data: {
-      categories: result.categories, // ✅ multiple categories info
+      categories: result.categories, 
       events: result.data,
     },
     meta: result.meta,

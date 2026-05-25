@@ -9,6 +9,8 @@ import mongoose from "mongoose";
 import { JwtPayload } from "jsonwebtoken";
 import { Personalization } from "../Personalizationuser/Personalization.model";
 import { Request as ExpressRequest } from 'express';
+import { PipelineStage } from "mongoose";
+import { Types } from "mongoose";
 
 // const register = async (payload: {
 //   fullName: string;
@@ -567,6 +569,212 @@ export const getMerchantShopService = async (req: ExpressRequest) => {
   }
 
   return socialLink;
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+export const getAllMerchantsService = async (req: any) => {
+  const page   = parseInt(req.query.page  as string) || 1;
+  const limit  = parseInt(req.query.limit as string) || 10;
+  const skip   = (page - 1) * limit;
+  const search = (req.query.search as string)?.trim() || '';
+
+  // ── Filter params ─────────────────────────────────────────────
+  const businessType        = req.query.Buisness_Type              as string;
+  const businessOwnerType   = req.query.Buisness_owner_Type        as string;
+  const businessCategory    = req.query.Buisness_Category          as string;
+  const businessSubCategory = req.query.businesssub_category       as string;
+  const secondCategory      = req.query.Second_BuisnessCategory    as string;
+  const secondSubCategory   = req.query.Second_BusinessSubCategory as string;
+
+  // ── Base match ────────────────────────────────────────────────
+  const baseMatch: any = {};
+
+  if (search) {
+    baseMatch.$or = [
+      { shopName: { $regex: search, $options: 'i' } },
+      { shoptype: { $regex: search, $options: 'i' } },
+    ];
+  }
+
+  if (businessType)        baseMatch.Buisness_Type       = businessType;
+  if (businessOwnerType)   baseMatch.Buisness_owner_Type = businessOwnerType;
+  if (businessCategory)    baseMatch.Buisness_Category   = new Types.ObjectId(businessCategory);
+  if (businessSubCategory) baseMatch.businesssub_category = new Types.ObjectId(businessSubCategory);
+  if (secondCategory)      baseMatch.Second_BuisnessCategory    = new Types.ObjectId(secondCategory);
+  if (secondSubCategory)   baseMatch.Second_BusinessSubCategory = new Types.ObjectId(secondSubCategory);
+
+  const pipeline: PipelineStage[] = [
+    { $match: baseMatch },
+
+    // ── User info আনো ─────────────────────────────────────────
+    {
+      $lookup: {
+        from:         'users',
+        localField:   'user',
+        foreignField: '_id',
+        as:           'userInfo',
+        pipeline: [
+          {
+            $match: {
+              isDeleted: { $ne: true },
+              isActive:  true,
+            },
+          },
+          {
+            $project: {
+              fullName:    1,
+              email:       1,
+              image:       1,
+              coverImage:  1,
+              country:     1,
+              phoneNumber: 1,
+              'subscription.status':    1,
+              'subscription.expiresAt': 1,
+            },
+          },
+        ],
+      },
+    },
+    { $unwind: { path: '$userInfo', preserveNullAndEmptyArrays: false } },
+
+    // ── isPro field ───────────────────────────────────────────
+    {
+      $addFields: {
+        isPro: {
+          $cond: {
+            if:   { $in: ['$userInfo.subscription.status', ['active', 'trialing']] },
+            then: true,
+            else: false,
+          },
+        },
+      },
+    },
+
+    // ── Category lookup ───────────────────────────────────────
+    {
+      $lookup: {
+        from:         'categories',
+        localField:   'Buisness_Category',
+        foreignField: '_id',
+        as:           'Buisness_Category',
+        pipeline: [{ $project: { name: 1 } }],
+      },
+    },
+    { $unwind: { path: '$Buisness_Category', preserveNullAndEmptyArrays: true } },
+
+    // ── SubCategory lookup ────────────────────────────────────
+    {
+      $lookup: {
+        from:         'subcategories',
+        localField:   'businesssub_category',
+        foreignField: '_id',
+        as:           'businesssub_category',
+        pipeline: [{ $project: { name: 1 } }],
+      },
+    },
+    { $unwind: { path: '$businesssub_category', preserveNullAndEmptyArrays: true } },
+
+    // ── Second Category lookup ────────────────────────────────
+    {
+      $lookup: {
+        from:         'categories',
+        localField:   'Second_BuisnessCategory',
+        foreignField: '_id',
+        as:           'Second_BuisnessCategory',
+        pipeline: [{ $project: { name: 1 } }],
+      },
+    },
+    { $unwind: { path: '$Second_BuisnessCategory', preserveNullAndEmptyArrays: true } },
+
+    // ── Second SubCategory lookup ─────────────────────────────
+    {
+      $lookup: {
+        from:         'subcategories',
+        localField:   'Second_BusinessSubCategory',
+        foreignField: '_id',
+        as:           'Second_BusinessSubCategory',
+        pipeline: [{ $project: { name: 1 } }],
+      },
+    },
+    { $unwind: { path: '$Second_BusinessSubCategory', preserveNullAndEmptyArrays: true } },
+
+    // ── Sort: isPro আগে ───────────────────────────────────────
+    { $sort: { isPro: -1, createdAt: -1 } },
+
+    // ── Facet ─────────────────────────────────────────────────
+    {
+      $facet: {
+        data: [
+          { $skip:  skip  },
+          { $limit: limit },
+          {
+            $project: {
+              shopName:                  1,
+              shoptype:                  1,
+              shoplink:                  1,
+              image:                     1,
+              facebook:                  1,
+              instagram:                 1,
+              linkedin:                  1,
+              twitter:                   1,
+              youtube:                   1,
+              tiktok:                    1,
+              website:                   1,
+              isPro:                     1,
+              Buisness_Type:             1,
+              Buisness_owner_Type:       1,
+              Buisness_Category:         1,
+              businesssub_category:      1,
+              Second_BuisnessCategory:   1,
+              Second_BusinessSubCategory: 1,
+              createdAt:                 1,
+              // User info
+              'userInfo.fullName':       1,
+              'userInfo.email':          1,
+              'userInfo.image':          1,
+              'userInfo.coverImage':     1,
+              'userInfo.country':        1,
+              'userInfo.phoneNumber':    1,
+              'userInfo.subscription':   1,
+            },
+          },
+        ],
+        totalCount: [{ $count: 'count' }],
+      },
+    },
+  ];
+
+  const [result] = await SocialLink.aggregate(pipeline);
+
+  const data  = result?.data               ?? [];
+  const total = result?.totalCount[0]?.count ?? 0;
+
+  return {
+    data,
+    pagination: {
+      total,
+      page,
+      limit,
+      totalPage:   Math.ceil(total / limit),
+      hasNextPage: page < Math.ceil(total / limit),
+      hasPrevPage: page > 1,
+    },
+  };
 };
 export const sosalServices = {
   register,

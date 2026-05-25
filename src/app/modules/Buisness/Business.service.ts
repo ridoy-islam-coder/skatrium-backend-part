@@ -523,8 +523,121 @@ export const getAllBusinessesService = async (req: Request) => {
 
 
 
+// business.service.ts
+export const getBusinessReviewsService = async (req: any) => {
+  const { businessId } = req.params;
+  const page  = parseInt(req.query.page  as string) || 1;
+  const limit = parseInt(req.query.limit as string) || 10;
+  const skip  = (page - 1) * limit;
+
+  const [result] = await Business.aggregate([
+    {
+      $match: {
+        _id: new Types.ObjectId(businessId),
+      },
+    },
+
+    { $unwind: { path: '$reviews', preserveNullAndEmptyArrays: true } },
+
+    {
+      $lookup: {
+        from:         'users',
+        localField:   'reviews.user',
+        foreignField: '_id',
+        as:           'reviews.userInfo',
+        pipeline: [
+          {
+            $project: {
+              fullName: 1,
+              image:    1,
+              email:    1,
+            },
+          },
+        ],
+      },
+    },
+    {
+      $addFields: {
+        'reviews.userInfo': {
+          $cond: {
+            if:   '$reviews.isAnonymous',
+            then: null,
+            else: { $arrayElemAt: ['$reviews.userInfo', 0] },
+          },
+        },
+      },
+    },
+
+    { $sort: { 'reviews.createdAt': -1 } },
+
+    {
+      $group: {
+        _id:   '$_id',
+        reviews: {
+          $push: {
+            reviewId:    '$reviews._id',
+            rating:      '$reviews.rating',
+            comment:     '$reviews.comment',
+            images:      '$reviews.images',
+            isAnonymous: '$reviews.isAnonymous',
+            userInfo:    '$reviews.userInfo',
+            createdAt:   '$reviews.createdAt',
+          },
+        },
+        total: { $sum: 1 },
+      },
+    },
+
+    {
+      $facet: {
+        data: [
+          {
+            $addFields: {
+              reviews: { $slice: ['$reviews', skip, limit] },
+            },
+          },
+          {
+            $project: {
+              _id:     0,
+              reviews: 1,
+            },
+          },
+        ],
+        totalCount: [{ $project: { total: 1 } }],
+      },
+    },
+  ]);
+
+  const reviews = result?.data[0]?.reviews       ?? [];
+  const total   = result?.totalCount[0]?.total   ?? 0;
+
+  return {
+    reviews,
+    pagination: {
+      total,
+      page,
+      limit,
+      totalPage:   Math.ceil(total / limit),
+      hasNextPage: page < Math.ceil(total / limit),
+      hasPrevPage: page > 1,
+    },
+  };
+};
 
 
+
+
+
+
+const getBusinessByUserId = async (userId: string) => {
+  const result = await Business.find({ host: userId })
+    .populate('host')
+    .populate('business_category')
+    .populate('business_sub_category')
+    .sort({ createdAt: -1 });
+
+  return result;
+};
 
 
 export const businessServices={
@@ -537,4 +650,5 @@ getActiveEventByBusinessService,
 getHomePageService,
 updateBusinessCategoryService,
 getAllBusinessesService,
+getBusinessByUserId,
 }

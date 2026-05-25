@@ -34,6 +34,6 @@ router.get("/events",auth(USER_ROLE.USER,USER_ROLE.admin), categoryController.ge
 
 // # সব একসাথে
 // GET /categories?search=music&isActive=true&isPopular=true&page=1&limit=10
-router.get("/user/getAllCategories", categoryController.getAllCategories);
+router.get("/user/getAll-Categories", categoryController.getAllCategoriesuser);
  
 export const catagoreeventRoutes = router;

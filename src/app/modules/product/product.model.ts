@@ -45,7 +45,11 @@ const productSchema = new Schema<IProduct>(
     description: { type: String, default: "" },
     price: { type: Number, required: true },
     discount: { type: Number, default: 0 },
-   
+    shopID: {
+      type: Schema.Types.ObjectId,
+      ref: "SocialLink",
+      required: true,
+    },
     shippingCost: { type: Number, default: 0},
     colors: [{ type: String }],
     sizes: [{ type: String }],

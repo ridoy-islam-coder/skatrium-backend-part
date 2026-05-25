@@ -26,10 +26,10 @@ router.delete(
 );
 
 // ─── Public Routes ─────────────────────────────────────────────────────────────
-router.get("/product-category",auth(UserRole.USER,UserRole.MARCHANT,UserRole.admin), ProductCategoryController.getAllProductCategories);
+router.get("/product-category",auth(UserRole.USER,UserRole.OWNER,UserRole.admin), ProductCategoryController.getAllProductCategories);
 
-router.get("/category/:id", auth(UserRole.USER,UserRole.MARCHANT,UserRole.admin), ProductCategoryController.getProductCategoryById);
+router.get("/category/:id", auth(UserRole.USER,UserRole.OWNER,UserRole.admin), ProductCategoryController.getProductCategoryById);
 
-router.get("/products/:categoryId", auth(UserRole.USER,UserRole.MARCHANT,UserRole.admin), ProductCategoryController.getProductsByCategoryId);
+router.get("/products/:categoryId", auth(UserRole.USER,UserRole.OWNER,UserRole.admin), ProductCategoryController.getProductsByCategoryId);
 
 export const ProductCategoryRoutes = router;

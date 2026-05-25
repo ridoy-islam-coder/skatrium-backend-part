@@ -15,13 +15,13 @@ const businessFileFields = upload.fields([
 
 
 
-router.get('/my-business',auth(USER_ROLE.USER),  businessController.getMyBusinesses);
+router.get('/my-business',auth(USER_ROLE.OWNER),  businessController.getMyBusinesses);
 
 router.get('/business-details/:id', auth(USER_ROLE.USER),BusinessViewcontroller.trackView, businessController.getBusinessDetails);
 
-router.post('/create-business', auth(USER_ROLE.USER), businessFileFields, businessController.createBusiness);
+router.post('/create-business', auth(USER_ROLE.OWNER), businessFileFields, businessController.createBusiness);
 
-router.patch('/update-business/:id',auth(USER_ROLE.USER), businessFileFields, businessController.updateBusiness);
+router.patch('/update-business/:id',auth(USER_ROLE.OWNER), businessFileFields, businessController.updateBusiness);
 
 router.delete('/delete-business/:id', auth(USER_ROLE.USER), businessController.deleteBusiness);
 
@@ -44,5 +44,15 @@ router.patch('/update-category', auth(USER_ROLE.OWNER), businessController.updat
 // # সব filter একসাথে
 // GET /businesses?search=pizza&business_type=OFFLINE&lat=23.8103&lng=90.4125&radiusKm=10&page=1&limit=10
 router.get('/get-businesses', auth(USER_ROLE.USER), businessController.getAllBusinesses);
+
+// business.route.ts
+
+router.get('/reviews/:businessId',auth(USER_ROLE.USER), businessController.getBusinessReviews);
+
+
+
+
+//user id diye business details dekhte parbe
+router.get('/user-business/:userId', auth(USER_ROLE.USER), businessController.getBusinessByUser);
 
 export const businessRoutes = router;
