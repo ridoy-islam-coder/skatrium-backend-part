@@ -6,7 +6,7 @@ import AppError from '../../../error/AppError';
 import User from '../../user/user.model';
 import { Event } from '../../event/event.model';
 import { Order } from '../../userOrder/userOrder.model';
-import { Ticket } from '../../Ticke/ticke.model';
+
 import { updatePastEvents } from '../../../utils/updatePastEvents';
 import { ro } from 'date-fns/locale/ro';
 import { Personalization } from '../../Personalizationuser/Personalization.model';
@@ -99,162 +99,6 @@ const resetPassword = async (email: string, newPassword: string) => {
 
 
 //admin dasbord api 
-
-// ── Admin Dashboard ────────────────────────────────────────────────────────────
-const MONTH_NAMES = [
-  "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-  "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
-];
-
-const getAdminDashboard = async (
-  year?: number,
-  analyticsType: string = "tickets",
-  page: number = 1,
-  limit: number = 10
-) => {
-
-  await updatePastEvents(); // ✅ query এর আগে update করুন
-  const targetYear = year || new Date().getFullYear();
-  const skip = (page - 1) * limit;
-
-  // ── Active Users count ────────────────────────────────────
-  const activeUsers = await User.countDocuments({
-    isDeleted: false,
-    isActive: true,
-  });
-
-  // ── Ongoing Events count ──────────────────────────────────
-  const ongoingEvents = await Event.countDocuments({
-    isPast: false,
-    isDeleted: false,
-  });
-
-  // ── Total Earning (tickets + orders) ─────────────────────
-  const ticketEarning = await Ticket.aggregate([
-    { $match: { paymentStatus: "paid", isDeleted: false } },
-    { $group: { _id: null, total: { $sum: "$totalAmount" } } },
-  ]);
-
-  const orderEarning = await Order.aggregate([
-    { $match: { paymentStatus: "paid", isDeleted: false } },
-    { $group: { _id: null, total: { $sum: "$total" } } },
-  ]);
-
-  const totalEarning =
-    (ticketEarning[0]?.total || 0) + (orderEarning[0]?.total || 0);
-
-  // ── Platform Analytics (monthly) ──────────────────────────
-  let monthlyAnalytics;
-
-  if (analyticsType === "tickets") {
-    const raw = await Ticket.aggregate([
-      {
-        $match: {
-          paymentStatus: "paid",
-          isDeleted: false,
-          createdAt: {
-            $gte: new Date(`${targetYear}-01-01`),
-            $lte: new Date(`${targetYear}-12-31`),
-          },
-        },
-      },
-      {
-        $group: {
-          _id: { $month: "$createdAt" },  // ✅ fixed
-          count: { $sum: "$quantity" },
-        },
-      },
-      { $sort: { _id: 1 } },
-    ]);
-
-    monthlyAnalytics = Array.from({ length: 12 }, (_, i) => {
-      const found = raw.find((r) => r._id === i + 1);
-      return {
-        month: i + 1,
-        name: MONTH_NAMES[i],  // ✅ month name added
-        count: found?.count || 0,
-      };
-    });
-
-  } else {
-    const raw = await Order.aggregate([
-      {
-        $match: {
-          paymentStatus: "paid",
-          isDeleted: false,
-          createdAt: {
-            $gte: new Date(`${targetYear}-01-01`),
-            $lte: new Date(`${targetYear}-12-31`),
-          },
-        },
-      },
-      {
-        $group: {
-          _id: { $month: "$createdAt" },  // ✅ fixed
-          count: { $sum: 1 },
-        },
-      },
-      { $sort: { _id: 1 } },
-    ]);
-
-    monthlyAnalytics = Array.from({ length: 12 }, (_, i) => {
-      const found = raw.find((r) => r._id === i + 1);
-      return {
-        month: i + 1,
-        name: MONTH_NAMES[i],  // ✅ month name added
-        count: found?.count || 0,
-      };
-    });
-  }
-
-  // ── Event List (latest) ───────────────────────────────────
-const now = new Date();
-
-const eventList = await Event.find({ 
-  isDeleted: false, 
-  isPast: false,
-  date: { $gte: now }  // ✅ শুধু future events
-})
-  .populate("host", "fullName image")
-  .populate("category", "name")
-  .sort({ date: 1 })  // ✅ date ascending — সবচেয়ে কাছের date আগে
-  .limit(5)
-  .select("title date coverImage location");
-
-
-
-  // ── New Users (latest with pagination) ───────────────────
-  const totalUsers = await User.countDocuments({ isDeleted: false });
-
-  const newUsers = await User.find({ isDeleted: false })
-    .sort({ createdAt: -1 })
-    .skip(skip)
-    .limit(limit)
-    .select("fullName image email role isActive isVerified createdAt");
-
-  return {
-    stats: {
-      activeUsers,
-      ongoingEvents,
-      totalEarning,
-    },
-    analytics: {
-      type: analyticsType,
-      year: targetYear,
-      data: monthlyAnalytics,
-    },
-    eventList,
-    newUsers: {
-      users: newUsers,
-      pagination: {
-        total: totalUsers,
-        page,
-        limit,
-        totalPages: Math.ceil(totalUsers / limit),
-      },
-    },
-  };
-};
 
 
 
@@ -353,7 +197,7 @@ export const adminService = {
   setForgotOtp,
   verifyOtp,
   resetPassword,
-  getAdminDashboard,
+ 
   getAllUsers,
   blockUser,
   unblockUser,

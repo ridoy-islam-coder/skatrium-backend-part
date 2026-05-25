@@ -27,15 +27,15 @@ router.delete('/delete-business/:id', auth(USER_ROLE.USER), businessController.d
 
 router.post('/active',auth(USER_ROLE.USER), businessController.getActiveEventByBusiness); // body: { businessID }
 
-router.get('/home',auth(USER_ROLE.ORGANIZER), businessController.getHomePage); // Home page data for all users
+router.get('/home',auth(USER_ROLE.OWNER), businessController.getHomePage); // Home page data for all users
 
-router.get('/analytics', auth(USER_ROLE.ORGANIZER), BusinessViewcontroller.getAnalytics);
+router.get('/analytics', auth(USER_ROLE.OWNER), BusinessViewcontroller.getAnalytics);
 
 
 
 
 // ✅ Update Business Category
-router.patch('/update-category', auth(USER_ROLE.ORGANIZER), businessController.updateBusinessCategory);
+router.patch('/update-category', auth(USER_ROLE.OWNER), businessController.updateBusinessCategory);
 
 
 

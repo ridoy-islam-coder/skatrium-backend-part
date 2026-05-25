@@ -318,93 +318,18 @@ const getAllSubscribers = catchAsync(async (req: Request, res: Response) => {
 
 
 
-// ═══════════════════════════════════════════════════════════════════
-//  Get All Organizers (Active subscription on top)
-// ═══════════════════════════════════════════════════════════════════
-export const getAllOrganizersService = async (req: Request) => {
-  const page  = parseInt(req.query.page  as string) || 1;
-  const limit = parseInt(req.query.limit as string) || 10;
-  const skip  = (page - 1) * limit;
 
-  const [organizers, total] = await Promise.all([
-    User.aggregate([
-      // ── Filter: শুধু ORGANIZER role ──────────────────────────
-      {
-        $match: {
-          role:      'ORGANIZER',
-          isDeleted: { $ne: true },
-          isActive:  true,
-        },
-      },
+export const getAllbuignessowner = catchAsync(async (req: Request, res: Response) => {
+  const result = await userServices.getAllOrganizersService(req);
 
-      // ── isPro field add করো ──────────────────────────────────
-      {
-        $addFields: {
-          isPro: {
-            $cond: {
-              if:   { $in: ['$subscription.status', ['active', 'trialing']] },
-              then: true,
-              else: false,
-            },
-          },
-        },
-      },
-
-      // ── Sort: active subscription আগে, তারপর createdAt ──────
-      {
-        $sort: {
-          isPro:     -1,
-          createdAt: -1,
-        },
-      },
-
-      // ── Pagination ────────────────────────────────────────────
-      { $skip:  skip  },
-      { $limit: limit },
-
-      // ── শুধু দরকারী fields রাখো ──────────────────────────────
-      {
-        $project: {
-          fullName:            1,
-          email:               1,
-          image:               1,
-          coverImage:          1,
-          about:               1,
-          country:             1,
-          phoneNumber:         1,
-          isPro:               1,
-          'subscription.status':    1,
-          'subscription.expiresAt': 1,
-          createdAt:           1,
-        },
-      },
-    ]),
-
-    // ── Total ORGANIZER count ─────────────────────────────────
-    User.countDocuments({
-      role:      'ORGANIZER',
-      isDeleted: { $ne: true },
-      isActive:  true,
-    }),
-  ]);
-
-  return {
-    data: organizers,
-    pagination: {
-      total,
-      page,
-      limit,
-      totalPage:   Math.ceil(total / limit),
-      hasNextPage: page < Math.ceil(total / limit),
-      hasPrevPage: page > 1,
-    },
-  };
-};
-
-export const organizerServices = {
-  getAllOrganizersService,
-};
-
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: 'Organizers fetched successfully',
+    data: result.data,
+    meta: result.pagination,
+  });
+});
 
 
 export const userControllers = {
@@ -423,4 +348,5 @@ export const userControllers = {
   getOrganizerProfile,
   getMarchantProfile,
   getAllSubscribers,
+  getAllbuignessowner,
 };

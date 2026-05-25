@@ -262,28 +262,6 @@ const resetPassword = catchAsync(async (req: Request, res: Response) => {
 
 //dashboard analytics
 
-// GET /api/v1/admin/dashboard?year=2025&type=tickets&page=1&limit=10
-const getAdminDashboard = catchAsync(async (req: Request, res: Response) => {
-  const year = req.query.year ? Number(req.query.year) : undefined;
-  const analyticsType = (req.query.type as string) || "tickets"; // tickets | orders
-  const page = req.query.page ? Number(req.query.page) : 1;
-  const limit = req.query.limit ? Number(req.query.limit) : 10;
- 
-  const result = await adminService.getAdminDashboard(
-    year,
-    analyticsType,
-    page,
-    limit
-  );
- 
-  sendResponse(res, {
-    statusCode: httpStatus.OK,
-    success: true,
-    message: "Admin dashboard fetched successfully",
-    data: result,
-  });
-});
-
 
 
 // GET /api/v1/admin/users?search=john&page=1&limit=10
@@ -366,7 +344,7 @@ export const adminControllers = {
   resetPassword,
   getProfile,
   //dashboard analytics
-  getAdminDashboard,
+
   getAllUsers,
   getSingleUser,
   blockUser,

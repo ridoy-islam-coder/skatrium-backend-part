@@ -3,7 +3,7 @@ import { Model } from 'mongoose';
 export enum UserRole {
   USER = 'USER',
   admin = 'admin',
-  ORGANIZER = 'ORGANIZER',
+  OWNER = 'OWNER',
 }
 export enum status {
   pending = 'pending',

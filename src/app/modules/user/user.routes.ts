@@ -10,20 +10,21 @@ import { UserRole } from "./user.interface";
 const router = Router();
 
 
+// GET /organizers?page=1&limit=10&search=john
+// GET /organizers?search=bangladesh
+// GET /organizers?page=2 
+router.get('/get-business-owners',auth(UserRole.USER), userControllers.getAllbuignessowner);  // GET /api/organizers
 
 
-router.get('/get-buser', userControllers.getAllOrganizers);  // GET /api/organizers
+router.get("/getby-roll", auth(UserRole.USER,UserRole.OWNER, UserRole.admin), userControllers.getUsersByRole);
 
 
-router.get("/getby-roll", auth(UserRole.USER,UserRole.ORGANIZER, UserRole.admin), userControllers.getUsersByRole);
-
-
-router.get("/organizer-profile/:userId",auth(UserRole.USER, UserRole.ORGANIZER, UserRole.admin),userControllers.getOrganizerProfile);
+router.get("/organizer-profile/:userId",auth(UserRole.USER, UserRole.OWNER, UserRole.admin),userControllers.getOrganizerProfile);
 
 
 
 // GET /api/v1/users/:userId/marchant-profile
-router.get("/marchant-profile/:userId",auth(UserRole.USER, UserRole.ORGANIZER,UserRole.admin ),userControllers.getMarchantProfile);
+router.get("/marchant-profile/:userId",auth(UserRole.USER, UserRole.OWNER,UserRole.admin ),userControllers.getMarchantProfile);
 
 
 // GET /api/v1/subscribe-email
@@ -110,7 +111,7 @@ router.get(
 
 router.delete(
   '/delete-account',
-  auth(USER_ROLE.USER, USER_ROLE.ORGANIZER),
+  auth(USER_ROLE.USER, USER_ROLE.OWNER),
   validateRequest(authValidation.deleteAccountZodSchema),
   userControllers.deleteAccount,
 );

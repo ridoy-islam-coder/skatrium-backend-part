@@ -12,7 +12,7 @@ import { Product } from "../product/product.model";
 import SocialLink from "../sociallink/soscial.model";
 import { Personalization } from "../Personalizationuser/Personalization.model";
 
-
+import { PipelineStage, Types } from 'mongoose';
 
 
 const getme = async (id: string) => {
@@ -227,7 +227,7 @@ const blockUser = async (id: string) => {
     throw new AppError(httpStatus.NOT_FOUND, 'User not found');
   }
 
-  if (user.role === 'admin' || user.role === 'USER' || user.role === 'ORGANIZER') {
+  if (user.role === 'admin' || user.role === 'USER' || user.role === 'OWNER') {
     throw new AppError(httpStatus.BAD_REQUEST, 'You cannot block an admin');
   }
   if (!user.isActive) {
@@ -740,6 +740,180 @@ const getAllSubscribers = async (query: TSubscriberQuery) => {
 
 
 
+
+
+export const getAllOrganizersService = async (req: any) => {
+  const page   = parseInt(req.query.page  as string) || 1;
+  const limit  = parseInt(req.query.limit as string) || 10;
+  const skip   = (page - 1) * limit;
+  const search = (req.query.search as string)?.trim() || '';
+
+  const lat      = parseFloat(req.query.lat      as string);
+  const lng      = parseFloat(req.query.lng      as string);
+  const radiusKm = parseFloat(req.query.radiusKm as string) || 10;
+
+  const businessOwnerType   = req.query.Buisness_owner_Type        as string;
+  const businessType        = req.query.Buisness_Type              as string;
+  const businessCategory    = req.query.Buisness_Category          as string;
+  const businessSubCategory = req.query.businesssub_category       as string;
+  const secondCategory      = req.query.Second_BuisnessCategory    as string;
+  const secondSubCategory   = req.query.Second_BusinessSubCategory as string;
+
+  const baseMatch: any = {
+    role:      'OWNER',
+    isDeleted: { $ne: true },
+    isActive:  true,
+  };
+
+  // ✅ PipelineStage[] type explicitly দাও
+  const pipeline: PipelineStage[] = [];
+
+  // ── Step 1: geoNear অথবা normal match ─────────────────────────
+  if (lat && lng) {
+    pipeline.push({
+      $geoNear: {
+        near: {
+          type:        'Point',
+          coordinates: [lng, lat],
+        },
+        distanceField: 'distance',
+        maxDistance:   radiusKm * 1000,
+        spherical:     true,
+        query:         baseMatch,
+      },
+    } as PipelineStage);  // ✅ cast করো
+  } else {
+    pipeline.push({ $match: baseMatch });
+  }
+
+  // ── Step 2: SocialLink lookup ──────────────────────────────────
+  pipeline.push(
+    {
+      $lookup: {
+        from:         'sociallinks',
+        localField:   '_id',
+        foreignField: 'user',
+        as:           'socialLink',
+      },
+    },
+    {
+      $addFields: {
+        socialLink: { $arrayElemAt: ['$socialLink', 0] },
+        distanceInKm: {
+          $cond: {
+            if:   { $ifNull: ['$distance', false] },
+            then: { $round: [{ $divide: ['$distance', 1000] }, 2] },
+            else: null,
+          },
+        },
+      },
+    },
+  );
+
+  // ── Step 3: SocialLink filter ──────────────────────────────────
+  const socialLinkFilter: any = {};
+  if (businessOwnerType)   socialLinkFilter['socialLink.Buisness_owner_Type'] = businessOwnerType;
+  if (businessType)        socialLinkFilter['socialLink.Buisness_Type']       = businessType;
+  if (businessCategory)    socialLinkFilter['socialLink.Buisness_Category']   = new Types.ObjectId(businessCategory);
+  if (businessSubCategory) socialLinkFilter['socialLink.businesssub_category']= new Types.ObjectId(businessSubCategory);
+  if (secondCategory)      socialLinkFilter['socialLink.Second_BuisnessCategory']    = new Types.ObjectId(secondCategory);
+  if (secondSubCategory)   socialLinkFilter['socialLink.Second_BusinessSubCategory'] = new Types.ObjectId(secondSubCategory);
+
+  if (Object.keys(socialLinkFilter).length > 0) {
+    pipeline.push({ $match: socialLinkFilter });
+  }
+
+  // ── Step 4: Text search ────────────────────────────────────────
+  if (search) {
+    pipeline.push({
+      $match: {
+        $or: [
+          { fullName:              { $regex: search, $options: 'i' } },
+          { email:                 { $regex: search, $options: 'i' } },
+          { country:               { $regex: search, $options: 'i' } },
+          { 'socialLink.shopName': { $regex: search, $options: 'i' } },
+        ],
+      },
+    });
+  }
+
+  // ── Step 5: isPro + sort + facet ──────────────────────────────
+  pipeline.push(
+    {
+      $addFields: {
+        isPro: {
+          $cond: {
+            if:   { $in: ['$subscription.status', ['active', 'trialing']] },
+            then: true,
+            else: false,
+          },
+        },
+      },
+    },
+    {
+      $sort: (lat && lng)
+        ? { distanceInKm: 1, isPro: -1 }
+        : { isPro: -1, createdAt: -1 },
+    },
+    {
+      $facet: {
+        data: [
+          { $skip:  skip  },
+          { $limit: limit },
+          {
+            $project: {
+              fullName:                                1,
+              email:                                   1,
+              image:                                   1,
+              coverImage:                              1,
+              about:                                   1,
+              country:                                 1,
+              phoneNumber:                             1,
+              isPro:                                   1,
+              location:                                1,
+              distanceInKm:                            1,
+              'subscription.status':                   1,
+              'subscription.expiresAt':                1,
+              createdAt:                               1,
+              'socialLink.Buisness_Type':              1,
+              'socialLink.Buisness_owner_Type':        1,
+              'socialLink.Buisness_Category':          1,
+              'socialLink.businesssub_category':       1,
+              'socialLink.Second_BuisnessCategory':    1,
+              'socialLink.Second_BusinessSubCategory': 1,
+             
+            },
+          },
+        ],
+        totalCount: [{ $count: 'count' }],
+      },
+    },
+  );
+
+  const [result] = await User.aggregate(pipeline);
+
+  const data  = result?.data              ?? [];
+  const total = result?.totalCount[0]?.count ?? 0;
+
+  return {
+    data,
+    pagination: {
+      total,
+      page,
+      limit,
+      totalPage:   Math.ceil(total / limit),
+      hasNextPage: page < Math.ceil(total / limit),
+      hasPrevPage: page > 1,
+    },
+  };
+};
+
+
+
+
+
+
+
 export const userServices = {
   getme,
   updateProfile,
@@ -757,4 +931,5 @@ export const userServices = {
   unblockUser,
   getMarchantProfile,
   getAllSubscribers,
+  getAllOrganizersService,
 };
