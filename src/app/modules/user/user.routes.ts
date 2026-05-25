@@ -10,9 +10,7 @@ import { UserRole } from "./user.interface";
 const router = Router();
 
 
-// GET /organizers?page=1&limit=10&search=john
-// GET /organizers?search=bangladesh
-// GET /organizers?page=2 
+// GET /organizers?page=1&limit=10&search=john&lat=23.8103&lng=90.4125&radiusKm=5&Buisness_Type=Restaurant&Buisness_owner_Type=Individual&Buisness_Category=664abc123&businesssub_category=664abc456&Second_BuisnessCategory=664abc789&Second_BusinessSubCategory=664abcabc
 router.get('/get-business-owners',auth(UserRole.USER), userControllers.getAllbuignessowner);  // GET /api/organizers
 
 

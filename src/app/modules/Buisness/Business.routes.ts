@@ -41,6 +41,8 @@ router.patch('/update-category', auth(USER_ROLE.OWNER), businessController.updat
 
 //user business gulo dekhte parbe, pro user gulo top e thakbe
 
+// # সব filter একসাথে
+// GET /businesses?search=pizza&business_type=OFFLINE&lat=23.8103&lng=90.4125&radiusKm=10&page=1&limit=10
 router.get('/get-businesses', auth(USER_ROLE.USER), businessController.getAllBusinesses);
 
 export const businessRoutes = router;

@@ -9,6 +9,7 @@ import { Event } from "../event/event.model";
 import User from "../user/user.model";
 import SocialLink from "../sociallink/soscial.model";
 import { Category } from "../eventcatagore/eventcatagore.model";
+import { Types,PipelineStage} from "mongoose";
 
 
 // ✅ Create Business (Add Business Details screen)
@@ -326,114 +327,188 @@ export const updateBusinessCategoryService = async (req: Request) => {
 
 
 
-
-// ═══════════════════════════════════════════════════════════════════
-//  Get All Businesses (Pro users on top)
-// ═══════════════════════════════════════════════════════════════════
 export const getAllBusinessesService = async (req: Request) => {
-  const page  = parseInt(req.query.page  as string) || 1;
-  const limit = parseInt(req.query.limit as string) || 10;
-  const skip  = (page - 1) * limit;
- 
-  // ── Step 1: Pro/Active subscriber user IDs বের করো ───────────
+  const page   = parseInt(req.query.page  as string) || 1;
+  const limit  = parseInt(req.query.limit as string) || 10;
+  const skip   = (page - 1) * limit;
+
+  // ── All Search & Filter params ────────────────────────────────
+  const search              = (req.query.search             as string)?.trim() || '';
+  const businessType        = req.query.business_type        as string;
+  const businessCategory    = req.query.business_category    as string;
+  const businessSubCategory = req.query.business_sub_category as string;
+  const businessDescription = (req.query.business_description as string)?.trim() || '';
+  const getVelocityOption   = req.query.get_velocity_option  as string;
+  const lat                 = parseFloat(req.query.lat       as string);
+  const lng                 = parseFloat(req.query.lng       as string);
+  const radiusKm            = parseFloat(req.query.radiusKm  as string) || 10;
+
+  // ── Pro user IDs ──────────────────────────────────────────────
   const proUsers = await User.find({
     'subscription.status': { $in: ['active', 'trialing'] },
     isDeleted: { $ne: true },
     isActive:  true,
   }).select('_id');
- 
+
   const proUserIds = proUsers.map((u) => u._id);
- 
-  // ── Step 2: Aggregate — pro user business গুলো উপরে ──────────
-  const [businesses, total] = await Promise.all([
-    Business.aggregate([
-      // ── isPro field add করো ──────────────────────────────────
-      {
-        $addFields: {
-          isPro: {
-            $cond: {
-              if:   { $in: ['$host', proUserIds] },
-              then: true,
-              else: false,
+
+  // ── Base match filter build ───────────────────────────────────
+  const baseMatch: any = {};
+
+  // business_name OR business_description দিয়ে search
+  if (search) {
+    baseMatch.$or = [
+      { business_name:        { $regex: search, $options: 'i' } },
+      { business_description: { $regex: search, $options: 'i' } },
+    ];
+  }
+
+  // business_description আলাদাভাবেও filter করা যাবে
+  if (businessDescription) {
+    baseMatch.business_description = { $regex: businessDescription, $options: 'i' };
+  }
+
+  if (businessType) {
+    baseMatch.business_type = businessType;  // ONLINE / OFFLINE
+  }
+
+  if (businessCategory) {
+    baseMatch.business_category = new Types.ObjectId(businessCategory);
+  }
+
+  if (businessSubCategory) {
+    baseMatch.business_sub_category = new Types.ObjectId(businessSubCategory);
+  }
+
+  if (getVelocityOption) {
+    baseMatch.get_velocity_option = getVelocityOption;
+  }
+
+  // ── Pipeline build ────────────────────────────────────────────
+  const pipeline: PipelineStage[] = [];
+
+  // ── Step 1: geoNear অথবা normal match ────────────────────────
+  if (lat && lng) {
+    pipeline.push({
+      $geoNear: {
+        near: {
+          type:        'Point',
+          coordinates: [lng, lat],  // MongoDB: [longitude, latitude]
+        },
+        distanceField: 'distance',
+        maxDistance:   radiusKm * 1000,  // km → meter
+        spherical:     true,
+        query:         baseMatch,
+      },
+    } as PipelineStage);
+  } else {
+    if (Object.keys(baseMatch).length > 0) {
+      pipeline.push({ $match: baseMatch });
+    }
+  }
+
+  // ── Step 2: isPro + distanceInKm field add ────────────────────
+  pipeline.push({
+    $addFields: {
+      isPro: {
+        $cond: {
+          if:   { $in: ['$host', proUserIds] },
+          then: true,
+          else: false,
+        },
+      },
+      ...(lat && lng
+        ? {
+            distanceInKm: {
+              $round: [{ $divide: ['$distance', 1000] }, 2],
             },
+          }
+        : {}),
+    },
+  });
+
+  // ── Step 3: Sort ──────────────────────────────────────────────
+  pipeline.push({
+    $sort: (lat && lng)
+      ? { distanceInKm: 1, isPro: -1, createdAt: -1 }  // কাছের আগে
+      : { isPro: -1, createdAt: -1 },                   // pro আগে
+  });
+
+  // ── Step 4: Facet ─────────────────────────────────────────────
+  pipeline.push({
+    $facet: {
+      data: [
+        { $skip:  skip  },
+        { $limit: limit },
+
+        // Lookup: host (User)
+        {
+          $lookup: {
+            from:         'users',
+            localField:   'host',
+            foreignField: '_id',
+            as:           'host',
+            pipeline: [
+              {
+                $project: {
+                  fullName: 1,
+                  image:    1,
+                  email:    1,
+                  'subscription.status': 1,
+                },
+              },
+            ],
           },
         },
-      },
- 
-      // ── Sort: pro আগে, তারপর createdAt ──────────────────────
-      {
-        $sort: {
-          isPro:     -1,  // pro = true আগে
-          createdAt: -1,  // নতুন আগে
+        { $unwind: { path: '$host', preserveNullAndEmptyArrays: true } },
+
+        // Lookup: business_category
+        {
+          $lookup: {
+            from:         'categories',
+            localField:   'business_category',
+            foreignField: '_id',
+            as:           'business_category',
+            pipeline: [{ $project: { name: 1 } }],
+          },
         },
-      },
- 
-      // ── Pagination ────────────────────────────────────────────
-      { $skip: skip  },
-      { $limit: limit },
- 
-      // ── Lookup: host (User) ───────────────────────────────────
-      {
-        $lookup: {
-          from:         'users',
-          localField:   'host',
-          foreignField: '_id',
-          as:           'host',
-          pipeline: [
-            {
-              $project: {
-                fullName: 1,
-                image:    1,
-                email:    1,
-                'subscription.status': 1,
-              },
-            },
-          ],
+        { $unwind: { path: '$business_category', preserveNullAndEmptyArrays: true } },
+
+        // Lookup: business_sub_category
+        {
+          $lookup: {
+            from:         'subcategories',
+            localField:   'business_sub_category',
+            foreignField: '_id',
+            as:           'business_sub_category',
+            pipeline: [{ $project: { name: 1 } }],
+          },
         },
-      },
-      { $unwind: { path: '$host', preserveNullAndEmptyArrays: true } },
- 
-      // ── Lookup: business_category ─────────────────────────────
-      {
-        $lookup: {
-          from:         'categories',
-          localField:   'business_category',
-          foreignField: '_id',
-          as:           'business_category',
-          pipeline: [{ $project: { name: 1 } }],
+        { $unwind: { path: '$business_sub_category', preserveNullAndEmptyArrays: true } },
+
+        // Project: unnecessary fields বাদ দাও
+        {
+          $project: {
+            featured_image_key: 0,
+            gallery_keys:       0,
+            reviews:            0,
+            __v:                0,
+            distance:           0,  // raw meter value hide করো
+          },
         },
-      },
-      { $unwind: { path: '$business_category', preserveNullAndEmptyArrays: true } },
- 
-      // ── Lookup: business_sub_category ─────────────────────────
-      {
-        $lookup: {
-          from:         'subcategories',
-          localField:   'business_sub_category',
-          foreignField: '_id',
-          as:           'business_sub_category',
-          pipeline: [{ $project: { name: 1 } }],
-        },
-      },
-      { $unwind: { path: '$business_sub_category', preserveNullAndEmptyArrays: true } },
- 
-      // ── Remove unnecessary fields ─────────────────────────────
-      {
-        $project: {
-          featured_image_key: 0,
-          gallery_keys:       0,
-          reviews:            0,
-          __v:                0,
-        },
-      },
-    ]),
- 
-    // ── Total count ───────────────────────────────────────────────
-    Business.countDocuments(),
-  ]);
- 
+      ],
+
+      totalCount: [{ $count: 'count' }],
+    },
+  });
+
+  const [result] = await Business.aggregate(pipeline);
+
+  const data  = result?.data               ?? [];
+  const total = result?.totalCount[0]?.count ?? 0;
+
   return {
-    data: businesses,
+    data,
     pagination: {
       total,
       page,
@@ -444,8 +519,6 @@ export const getAllBusinessesService = async (req: Request) => {
     },
   };
 };
-
-
 
 
 
