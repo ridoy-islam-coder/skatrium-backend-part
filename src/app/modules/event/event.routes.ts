@@ -34,4 +34,11 @@ router.post('/promotion',auth(USER_ROLE.OWNER),  eventController.addEventPromoti
 router.patch('/:id/mark-past', eventController.markEventAsPast);
 router.delete('/:id',          eventController.deleteEvent);
 
+
+
+
+//all roll useing 
+
+router.get('/business/:businessId', eventController.getEventsByBusiness);
+
 export const eventRoutes = router;

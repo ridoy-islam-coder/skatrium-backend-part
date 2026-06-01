@@ -1457,6 +1457,41 @@ const addReviewReply = async (
 };
 
 
+
+
+
+
+
+
+
+
+const getProductsByShop = async (
+  shopId: string,
+  page: number = 1,
+  limit: number = 10,
+) => {
+  const query = { shopID: new mongoose.Types.ObjectId(shopId) };
+
+  const skip = (page - 1) * limit;
+  const total = await Product.countDocuments(query);
+
+  const products = await Product.find(query)
+    .populate('category', 'name')
+    .sort({ createdAt: -1 })
+    .skip(skip)
+    .limit(limit)
+    .lean();
+
+  return {
+    products,
+    meta: {
+      page,
+      limit,
+      total,
+      totalPages: Math.ceil(total / limit),
+    },
+  };
+};
 export const productServices = {
     getAllProductsService,
     getProductDetailsService,
@@ -1483,5 +1518,5 @@ getReviewsByProduct,
   updateManageOrderStatus,
   getProductsByHost,
   addReviewReply,
-  
+  getProductsByShop
 };

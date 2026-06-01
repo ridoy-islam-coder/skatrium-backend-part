@@ -241,7 +241,7 @@ export const getHomePageService = async (req: Request) => {
 
   // ── SocialLink with populate ──────────────────────────────────
   const socialLinkRaw = await SocialLink.findOne({ user: userId })
-    .populate('Buisness_Category',    'name slug image_url')
+    .populate('Buisness_Category',    'name slug image')
     .populate('businesssub_category', 'name slug');
 
   // ── Total category count ──────────────────────────────────────

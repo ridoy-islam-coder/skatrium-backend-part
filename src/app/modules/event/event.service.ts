@@ -337,6 +337,28 @@ export const deleteEventService = async (req: Request): Promise<IEventDocument> 
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+export const getEventsByBusinessService = async (businessId: string) => {
+  const events = await Event.find({
+    businessID: new mongoose.Types.ObjectId(businessId),
+    isPast: false,
+  }).sort({ createdAt: -1 });
+
+  return events;
+};
+
 export const eventServices = {
   getAllEventsService,
   getMyEventsService,
@@ -346,4 +368,5 @@ export const eventServices = {
   addEventPromotionService,
   markEventAsPastService,
   deleteEventService,
+  getEventsByBusinessService,
 };

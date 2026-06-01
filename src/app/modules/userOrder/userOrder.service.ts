@@ -513,95 +513,87 @@ export const updateOrderStatus = async (orderId: string, status: string) => {
   return order;
 };
 
+
+
 const getMyProductOrders = async (
   userId: string,
   orderStatus?: string,
   page: number = 1,
   limit: number = 10,
 ) => {
-  // ─── Step 1: host দিয়ে আমার সব product খোঁজো ──────────────
+  // ─── Step 1: host দিয়ে সব product খোঁজো ────────────────────
   const myProducts = await Product.find(
-    { host: userId },
+    { host: new mongoose.Types.ObjectId(userId) },
     { _id: 1 },
-  );
+  ).lean();
 
   const myProductIds = myProducts.map((p) => p._id);
 
   if (myProductIds.length === 0) {
     return {
       meta: { page, limit, total: 0, totalPages: 0 },
-      totalOrders: 0,
       totalQuantity: 0,
-      orders: [],
+      orders: {},
     };
   }
 
-  // ─── Step 2: filter query বানাও ─────────────────────────────
+  // ─── Step 2: query বানাও ────────────────────────────────────
+  const validStatuses = ['processing', 'shipped', 'delivered', 'cancelled'];
+
+  if (orderStatus && !validStatuses.includes(orderStatus)) {
+    throw new AppError(
+      httpStatus.BAD_REQUEST,
+      `Invalid orderStatus. Must be one of: ${validStatuses.join(', ')}`,
+    );
+  }
+
   const query: Record<string, any> = {
     'items.product': { $in: myProductIds },
   };
+  if (orderStatus) query.orderStatus = orderStatus;
 
-  if (orderStatus) {
-    const validStatuses = ['processing', 'shipped', 'delivered', 'cancelled'];
-    if (!validStatuses.includes(orderStatus)) {
-      throw new AppError(
-        httpStatus.BAD_REQUEST,
-        `Invalid orderStatus. Must be one of: ${validStatuses.join(', ')}`,
-      );
-    }
-    query.orderStatus = orderStatus;
-  }
-
-  // ─── Step 3: pagination calculate ───────────────────────────
+  // ─── Step 3: pagination + orders ────────────────────────────
   const skip = (page - 1) * limit;
   const total = await Order.countDocuments(query);
-  const totalPages = Math.ceil(total / limit);
 
-  // ─── Step 4: order খোঁজো ────────────────────────────────────
   const orders = await Order.find(query)
     .populate('user', 'fullName email phoneNumber')
-    .populate('items.product', 'name discountPrice  images host')
+    .populate('items.product', 'name discountPrice images')
     .sort({ createdAt: -1 })
     .skip(skip)
-    .limit(limit);
+    .limit(limit)
+    .lean();
 
-  // ─── Step 5: শুধু আমার product এর items ফিল্টার করো ────────
+  // ─── Step 4: response বানাও ──────────────────────────────────
   const myProductIdStrings = myProductIds.map((id) => id.toString());
 
-  const result = orders.map((order) => {
+  const result: Record<string, any> = {};
+  let totalQuantity = 0;
+
+  for (const order of orders) {
     const myItems = order.items.filter((item) =>
       myProductIdStrings.includes(item.product._id.toString()),
     );
 
-    // const orderId = order._id.toString();
-    // const orderNumber = '#' + orderId.substring(19, 24).toUpperCase();
+    totalQuantity += myItems.reduce((sum, item) => sum + item.quantity, 0);
 
-    return {
-      orderId: order._id,
-      orderNumber:order.oderid,
-      orderStatus: order.orderStatus,
-      paymentStatus: order.paymentStatus,
-      customer: order.user,
+    result[order._id.toString()] = {
+      orderId:         order._id,
+      orderNumber:     order.oderid,
+      orderStatus:     order.orderStatus,
+      paymentStatus:   order.paymentStatus,
+      customer:        order.user,
       shippingAddress: order.shippingAddress,
       myItems,
-      total: order.total,
-      createdAt: order.createdAt,
+      total:           order.total,
+      createdAt:       order.createdAt,
     };
-  });
+  }
 
   return {
- 
-    totalQuantity: result.reduce(
-      (sum, o) => sum + o.myItems.reduce((s, i) => s + i.quantity, 0),
-      0,
-    ),
+    totalQuantity,
     orders: result,
-       meta: {
-      page,
-      limit,
-      total,
-      totalPages,
-    },
+    meta: { page, limit, total, totalPages: Math.ceil(total / limit) },
   };
 };
  

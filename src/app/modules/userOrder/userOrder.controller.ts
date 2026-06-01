@@ -135,8 +135,6 @@ export const updateOrderStatus = catchAsync(async (req, res) => {
 
 
 
-
-
 const getMyProductOrders = catchAsync(async (req: Request, res: Response) => {
   const userId = req.user._id;
   const { orderStatus, page, limit } = req.query;
@@ -151,12 +149,10 @@ const getMyProductOrders = catchAsync(async (req: Request, res: Response) => {
   sendResponse(res, {
     statusCode: httpStatus.OK,
     success: true,
-    message: 'Your product orders fetched successfully',
+    message: 'Shop orders fetched successfully',
     data: result,
   });
 });
-
-
 
 
 

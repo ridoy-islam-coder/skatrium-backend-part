@@ -47,6 +47,6 @@ router.get('/merchant-shop/:userId', auth(USER_ROLE.OWNER), socialControllers.ge
 
 // # সব একসাথে
 // GET /merchants?search=supreme&Buisness_Type=Skatewear&page=1&limit=10
-router.get('/', getAllMerchants);
+router.get('/merchants', getAllMerchants);
 
 export const sosaleMediaRoutes = router;

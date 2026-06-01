@@ -94,13 +94,35 @@ export const deleteEvent = catchAsync(async (req, res) => {
 });
 
 
+
+
+
+
+
+
+
+
+export const getEventsByBusiness = catchAsync(async (req, res) => {
+  const result = await eventServices.getEventsByBusinessService(req.params.businessId as string);
+  sendResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: 'Events fetched successfully',
+    data: result,
+  });
+});
+
+
+
+
+
 export const eventController = {
   getAllEvents,
   getMyEvents,
   getEventById,
   createEvent,
   updateEvent,
-
+getEventsByBusiness, 
   addEventPromotion,
   markEventAsPast,
   deleteEvent,

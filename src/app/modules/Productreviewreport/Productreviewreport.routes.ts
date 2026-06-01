@@ -9,7 +9,7 @@ const router = express.Router();
 // POST /api/v1/product-reviews/:productId/:reviewId/report
 router.post(
   "/product-report",
-  auth( USER_ROLE.MARCHANT),
+  auth(USER_ROLE.OWNER),
   ProductReviewReportController.reportProductReview
 );
 

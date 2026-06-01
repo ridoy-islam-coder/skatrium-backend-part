@@ -19,6 +19,11 @@ router.get('/my-business',auth(USER_ROLE.OWNER),  businessController.getMyBusine
 
 router.get('/business-details/:id', auth(USER_ROLE.USER),BusinessViewcontroller.trackView, businessController.getBusinessDetails);
 
+
+
+router.get('/details/:id', auth(USER_ROLE.OWNER),businessController.getBusinessDetails);
+
+
 router.post('/create-business', auth(USER_ROLE.OWNER), businessFileFields, businessController.createBusiness);
 
 router.patch('/update-business/:id',auth(USER_ROLE.OWNER), businessFileFields, businessController.updateBusiness);

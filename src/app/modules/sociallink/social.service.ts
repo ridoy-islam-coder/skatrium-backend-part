@@ -470,7 +470,7 @@ export const createMerchantShopService = async (req: ExpressRequest) => {
   if (existing) {
     throw new AppError(httpStatus.BAD_REQUEST, 'Merchant shop already exists. Use update instead.');
   }
- 
+  console.log("🚀 ~ file: social.service.ts:263 ~ createMerchantShopService ~ files:", existing)
   // ── Image upload ──────────────────────────────────────────────
   let image = { id: '', url: '' };
  

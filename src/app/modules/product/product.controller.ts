@@ -513,7 +513,23 @@ const addReviewReply = catchAsync(async (req, res) => {
   });
 });
 
+const getProductsByShop = catchAsync(async (req, res) => {
+  const { shopId } = req.params;
+  const { page, limit } = req.query;
 
+  const result = await productServices.getProductsByShop(
+    shopId as string,
+    Number(page) || 1,
+    Number(limit) || 10,
+  );
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: 'Shop products fetched successfully',
+    data: result,
+  });
+});
 
 export const productController = {
     getAllProducts,
@@ -542,4 +558,5 @@ export const productController = {
   getReviewsByProduct,
   getProductsByHost,
   addReviewReply,
+  getProductsByShop
 };

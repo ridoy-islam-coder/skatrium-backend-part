@@ -20,9 +20,9 @@ router.patch("/update/:id",auth(USER_ROLE.USER,USER_ROLE.admin), categoryControl
 router.delete("/delete/:id",auth(USER_ROLE.USER,USER_ROLE.admin), categoryController.deleteCategory);
 
 
-//newapi
+//newapi    getAllCategories
 
-router.get("/getAllCategories",  categoryController.getAllCategories);
+router.get("/getAllCategories",  categoryController.getAllCategoriesuser);
 
 router.get("/details/:id",auth(USER_ROLE.USER,USER_ROLE.admin), categoryController.getCategoryByIdnew);
 

@@ -132,4 +132,10 @@ router.get("/getproduct-reviews/:productId", productController.getReviewsByProdu
 router.get("/host/:hostId",auth(USER_ROLE.OWNER,USER_ROLE.USER), productController.getProductsByHost);
 
 router.post("/reply", auth(USER_ROLE.OWNER), productController.addReviewReply);
+
+
+router.get("/:shopId", auth(USER_ROLE.OWNER), productController.getProductsByShop);
+
+
+
 export const productsRoutes = router;
