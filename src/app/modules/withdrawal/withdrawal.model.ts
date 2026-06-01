@@ -18,17 +18,17 @@ const withdrawalSchema = new Schema<IWithdrawal>(
   {
     driverProfileId: {
       type: Schema.Types.ObjectId,
-      ref: 'User',
+      ref: 'Balance', // Fixed reference to Balance model
       required: true,
     },
     amount: { type: Number, required: true },
     status: {
       type: String,
-      enum: ['PENDING', 'COMPLETED', 'REJECTED'] satisfies WithdrawalStatus[],
+      enum: ['PENDING', 'COMPLETED', 'REJECTED'],
       default: 'PENDING',
     },
     stripeTransferId: { type: String, default: null },
-    processedBy: { type: String, default: null },
+    processedBy: { type: String, default: null }, // Usually reference to admin User ID
     processedAt: { type: Date, default: null },
   },
   { timestamps: true },

@@ -2,7 +2,7 @@ import { Schema, model, Document, Types } from 'mongoose';
 
 export interface IDriverProfile extends Document {
   _id: Types.ObjectId;
-  userId: string;
+  userId: Types.ObjectId; // Changed to ObjectId
   currentBalance: number;
   stripeAccountId: string | null;
   stripeOnboarded: boolean;
@@ -12,8 +12,8 @@ export interface IDriverProfile extends Document {
 
 const balanceSchema = new Schema<IDriverProfile>(
   {
-    userId: { type: String, ref: 'User', required: true },
-    currentBalance: { type: Number, default: 0 },
+    userId: { type: Schema.Types.ObjectId, ref: 'User', required: true, unique: true }, // Added ObjectId and unique
+    currentBalance: { type: Number, default: 0, min: 0 }, // Added min: 0 to prevent negative balance
     stripeAccountId: { type: String, default: null },
     stripeOnboarded: { type: Boolean, default: false },
   },

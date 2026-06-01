@@ -9,6 +9,7 @@ import config from "../../config";
 import { Order } from "./userOrder.model";
 import  httpStatus from 'http-status';
 import { uploadToS3 } from "../../utils/fileHelper";
+import { handleStripeWebhook } from './userOrder.service';
 const stripe = new Stripe(config.stripe.stripe_secret_key as string);
 
 
@@ -155,9 +156,26 @@ const getMyProductOrders = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+
+
+
+
+
+// order.controller.ts এর ভেতরে এই ফাংশনটি যোগ করুন
+const stripeWebhook = catchAsync(async (req: Request, res: Response) => {
+  // আপনার সার্ভিসের handleStripeWebhook মেথডটিকে কল করা হচ্ছে
+  await orderService.handleStripeWebhook(req);
+
+  // স্ট্রাইপকে সফল রেসপন্স পাঠানো (এটি না পাঠালে স্ট্রাইপ বারবার রিকোয়েস্ট পাঠাতে থাকবে)
+  res.status(200).json({ received: true });
+});
+
+
+
+
 export const orderController = {
   createOrder,
-  // stripeWebhook,
+  stripeWebhook,
   getOrderHistory,
   getOrderDetails,
   orderCancelPage,

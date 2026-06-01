@@ -8,11 +8,12 @@ export class WithdrawalController {
     next: NextFunction,
   ) {
     try {
-      const result =
-        await WithdrawalService.requestWithdrawal(
-          req.user.id,
-          Number(req.body.amount),
-        );
+      // (req as any) ব্যবহার করে টাইপ সেফ করা হলো
+      const userId = (req as any).user?.id;
+      const result = await WithdrawalService.requestWithdrawal(
+        userId,
+        Number(req.body.amount),
+      );
 
       res.status(201).json({
         success: true,
@@ -29,10 +30,8 @@ export class WithdrawalController {
     next: NextFunction,
   ) {
     try {
-      const result =
-        await WithdrawalService.getWithdrawalHistory(
-          req.user.id,
-        );
+      const userId = (req as any).user?.id;
+      const result = await WithdrawalService.getWithdrawalHistory(userId);
 
       res.json({
         success: true,
@@ -49,10 +48,9 @@ export class WithdrawalController {
     next: NextFunction,
   ) {
     try {
-      const result =
-        await WithdrawalService.getWithdrawalStatus(
-          req.params.withdrawalId as string,
-        );
+      const result = await WithdrawalService.getWithdrawalStatus(
+        req.params.withdrawalId as string,
+      );
 
       res.json({
         success: true,
@@ -69,14 +67,16 @@ export class WithdrawalController {
     next: NextFunction,
   ) {
     try {
-      await WithdrawalService.approveWithdrawal(
+      const adminId = (req as any).user?.id;
+      const result = await WithdrawalService.approveWithdrawal(
         req.params.withdrawalId as string,
-        req.user.id,
+        adminId,
       );
 
       res.json({
         success: true,
-        message: 'Withdrawal approved',
+        message: 'Withdrawal approved successfully',
+        data: result,
       });
     } catch (error) {
       next(error);
@@ -89,14 +89,16 @@ export class WithdrawalController {
     next: NextFunction,
   ) {
     try {
-      await WithdrawalService.rejectWithdrawal(
+      const adminId = (req as any).user?.id;
+      const result = await WithdrawalService.rejectWithdrawal(
         req.params.withdrawalId as string,
-        req.user.id,
+        adminId,
       );
 
       res.json({
         success: true,
-        message: 'Withdrawal rejected',
+        message: 'Withdrawal rejected successfully',
+        data: result,
       });
     } catch (error) {
       next(error);
