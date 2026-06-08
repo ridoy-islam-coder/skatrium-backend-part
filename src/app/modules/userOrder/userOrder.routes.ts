@@ -16,9 +16,7 @@ import upload from "../../middleware/fileUpload";
 const router = Router();
  
 
-// ─── ১. STRIPE WEBHOOK ROUTE (অবশ্যই auth ছাড়া এবং সবার উপরে থাকবে) ───
-// নোট: স্ট্রাইপ ওয়েব হুকের বডি ভেরিফাই করার জন্য express.raw() প্রয়োজন হয়।
-// আপনার কন্ট্রোলারে যদি stripeWebhook মেথডটি হ্যান্ডেল করা থাকে, তবে এটি অন করুন।
+
 router.post(
   "/webhook",
   express.raw({ type: "application/json" }), 
